@@ -1,4 +1,4 @@
-# Crypto Risk Manager 🛡️📊
+# Agentic Risk Manager 🛡️📊
 
 An institutional-grade, non-custodial crypto portfolio risk manager that delivers real-time risk quantification, Greek factor decomposition, tail-risk metrics, and actionable rebalancing recommendations across Spot, Tokenized RWAs, and Perpetual/Derivative contracts.
 

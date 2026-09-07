@@ -20,10 +20,10 @@
 
 **Purpose**: Monorepo initialization, Docker orchestration, and dependency scaffolding
 
-- [ ] T001 Initialize monorepo directory layout with `backend/` and `frontend/` per implementation plan
-- [ ] T002 [P] Configure Docker Compose orchestration for PostgreSQL 16 (TimescaleDB) and Redis 7 in `docker-compose.yml`
-- [ ] T003 [P] Initialize Python FastAPI backend environment, dependencies, and virtualenv in `backend/requirements.txt`
-- [ ] T004 [P] Initialize Next.js 14+ TypeScript project, dependencies, and configuration in `frontend/package.json`
+- [X] T001 Initialize monorepo directory layout with `backend/` and `frontend/` per implementation plan
+- [X] T002 [P] Configure Docker Compose orchestration for PostgreSQL 16 (TimescaleDB) and Redis 7 in `docker-compose.yml`
+- [X] T003 [P] Initialize Python FastAPI backend environment, dependencies, and virtualenv in `backend/requirements.txt`
+- [X] T004 [P] Initialize Next.js 14+ TypeScript project, dependencies, and configuration in `frontend/package.json`
 
 ---
 
@@ -33,14 +33,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Configure application configuration and environment variable validation in `backend/src/core/config.py`
-- [ ] T006 [P] Implement PostgreSQL connection pool and TimescaleDB hypertable initialization in `backend/src/core/database.py`
-- [ ] T007 [P] Implement Redis caching client for live prices, quotes, and computed matrices in `backend/src/core/redis_client.py`
-- [ ] T008 [P] Implement database entities and SQLAlchemy / asyncpg schema mappings in `backend/src/models/entities.py`
-- [ ] T009 [P] Implement Pydantic v2 DTO schemas for API request and response validation in `backend/src/models/schemas.py`
-- [ ] T010 Implement core FastAPI application with CORS and error handling middleware in `backend/src/main.py`
-- [ ] T011 [P] Configure Privy React Provider and Wagmi/Viem Web3 configuration in `frontend/src/app/providers.tsx`
-- [ ] T012 [P] Implement CSS design tokens, dark mode palette, and typography system in `frontend/src/styles/theme.css`
+- [X] T005 Configure application configuration and environment variable validation in `backend/src/core/config.py`
+- [X] T006 [P] Implement PostgreSQL connection pool and TimescaleDB hypertable initialization in `backend/src/core/database.py`
+- [X] T007 [P] Implement Redis caching client for live prices, quotes, and computed matrices in `backend/src/core/redis_client.py`
+- [X] T008 [P] Implement database entities and SQLAlchemy / asyncpg schema mappings in `backend/src/models/entities.py`
+- [X] T009 [P] Implement Pydantic v2 DTO schemas for API request and response validation in `backend/src/models/schemas.py`
+- [X] T010 Implement core FastAPI application with CORS and error handling middleware in `backend/src/main.py`
+- [X] T011 [P] Configure Privy React Provider and Wagmi/Viem Web3 configuration in `frontend/src/app/providers.tsx`
+- [X] T012 [P] Implement CSS design tokens, dark mode palette, and typography system in `frontend/src/styles/theme.css`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -54,13 +54,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [P] [US1] Implement ENS reverse resolution and session handler in `backend/src/api/auth.py`
-- [ ] T014 [P] [US1] Implement Chainlink price feed reader and CoinGecko fallback service with timestamped provenance in `backend/src/services/oracles.py`
-- [ ] T015 [US1] Implement multi-chain token balance fetcher via The Graph Token API with 1inch fallback in `backend/src/services/indexer.py`
-- [ ] T016 [US1] Implement portfolio balance discovery and sync endpoint `POST /api/v1/portfolio/{wallet_address}/sync` in `backend/src/api/portfolio.py`
-- [ ] T017 [P] [US1] Implement navigation header with Privy login modal, wallet status, and ENS badge in `frontend/src/components/layout/Header.tsx`
-- [ ] T018 [US1] Implement unified holdings table with chain badges, token quantities, and USD valuations in `frontend/src/components/dashboard/HoldingsTable.tsx`
-- [ ] T019 [US1] Implement executive dashboard page integrating wallet connection and holdings discovery in `frontend/src/app/page.tsx`
+- [X] T013 [P] [US1] Implement ENS reverse resolution and session handler in `backend/src/api/auth.py`
+- [X] T014 [P] [US1] Implement Chainlink price feed reader and CoinGecko fallback service with timestamped provenance in `backend/src/services/oracles.py`
+- [X] T015 [US1] Implement multi-chain token balance fetcher via The Graph Token API with 1inch fallback in `backend/src/services/indexer.py`
+- [X] T016 [US1] Implement portfolio balance discovery and sync endpoint `POST /api/v1/portfolio/{wallet_address}/sync` in `backend/src/api/portfolio.py`
+- [X] T017 [P] [US1] Implement navigation header with Privy login modal, wallet status, and ENS badge in `frontend/src/components/layout/Header.tsx`
+- [X] T018 [US1] Implement unified holdings table with chain badges, token quantities, and USD valuations in `frontend/src/components/dashboard/HoldingsTable.tsx`
+- [X] T019 [US1] Implement executive dashboard page integrating wallet connection and holdings discovery in `frontend/src/app/page.tsx`
 
 **Checkpoint**: User Story 1 is fully functional as a standalone MVP.
 
@@ -74,12 +74,12 @@
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Implement Chainlink Proof of Reserve / NAVLink verification service for tokenized RWAs in `backend/src/services/rwa_verifier.py`
-- [ ] T021 [US2] Implement manual deal CRUD endpoints `GET` and `POST /api/v1/blotter/{wallet_address}/deals` in `backend/src/api/blotter.py`
-- [ ] T022 [US2] Implement consolidated portfolio position blending service (combining on-chain holdings and manual blotter deals) in `backend/src/services/portfolio_aggregator.py`
-- [ ] T023 [P] [US2] Implement manual deal entry modal form with field-level validation (Crypto, RWA, Perps) in `frontend/src/components/blotter/DealEntryModal.tsx`
-- [ ] T024 [US2] Implement trade blotter view with filtering across asset classes in `frontend/src/components/blotter/BlotterTable.tsx`
-- [ ] T025 [US2] Implement dedicated blotter management page in `frontend/src/app/blotter/page.tsx`
+- [X] T020 [P] [US2] Implement Chainlink Proof of Reserve / NAVLink verification service for tokenized RWAs in `backend/src/services/rwa_verifier.py`
+- [X] T021 [US2] Implement manual deal CRUD endpoints `GET` and `POST /api/v1/blotter/{wallet_address}/deals` in `backend/src/api/blotter.py`
+- [X] T022 [US2] Implement consolidated portfolio position blending service (combining on-chain holdings and manual blotter deals) in `backend/src/services/portfolio_aggregator.py`
+- [X] T023 [P] [US2] Implement manual deal entry modal form with field-level validation (Crypto, RWA, Perps) in `frontend/src/components/blotter/DealEntryModal.tsx`
+- [X] T024 [US2] Implement trade blotter view with filtering across asset classes in `frontend/src/components/blotter/BlotterTable.tsx`
+- [X] T025 [US2] Implement dedicated blotter management page in `frontend/src/app/blotter/page.tsx`
 
 **Checkpoint**: User Stories 1 AND 2 both work independently and integrate seamlessly.
 
@@ -93,13 +93,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T026 [P] [US3] Implement historical price series retrieval and daily log-return calculations in `backend/src/math/returns.py`
-- [ ] T027 [P] [US3] Implement Beta calculation benchmarked against Bitcoin ($BTC$) reference index in `backend/src/math/beta.py`
-- [ ] T028 [P] [US3] Implement position Delta, period Volatility, and Standard Deviation in `backend/src/math/volatility.py`
-- [ ] T029 [P] [US3] Implement single-asset Sharpe and Treynor ratios assuming $R_f = 0$ in `backend/src/math/ratios.py`
-- [ ] T030 [US3] Implement single-deal risk calculation endpoint `POST /api/v1/risk/single` in `backend/src/api/risk.py`
-- [ ] T031 [P] [US3] Implement single-deal risk analytics drawer UI with formula explanations in `frontend/src/components/risk/SingleRiskDrawer.tsx`
-- [ ] T032 [US3] Connect single-position risk drawer to holdings and blotter rows in `frontend/src/components/dashboard/HoldingsTable.tsx`
+- [X] T026 [P] [US3] Implement historical price series retrieval and daily log-return calculations in `backend/src/math/returns.py`
+- [X] T027 [P] [US3] Implement Beta calculation benchmarked against Bitcoin ($BTC$) reference index in `backend/src/math/beta.py`
+- [X] T028 [P] [US3] Implement position Delta, period Volatility, and Standard Deviation in `backend/src/math/volatility.py`
+- [X] T029 [P] [US3] Implement single-asset Sharpe and Treynor ratios assuming $R_f = 0$ in `backend/src/math/ratios.py`
+- [X] T030 [US3] Implement single-deal risk calculation endpoint `POST /api/v1/risk/single` in `backend/src/api/risk.py`
+- [X] T031 [P] [US3] Implement single-deal risk analytics drawer UI with formula explanations in `frontend/src/components/risk/SingleRiskDrawer.tsx`
+- [X] T032 [US3] Connect single-position risk drawer to holdings and blotter rows in `frontend/src/components/dashboard/HoldingsTable.tsx`
 
 **Checkpoint**: Individual risk factor attribution is complete and testable.
 
@@ -113,13 +113,13 @@
 
 ### Implementation for User Story 4
 
-- [ ] T033 [P] [US4] Implement Black-Scholes and synthetic derivative Greek sensitivities (Delta, Gamma, Vega) in `backend/src/math/greeks.py`
-- [ ] T034 [P] [US4] Implement high-dimensional $N \times N$ variance-covariance matrix and correlation calculations with Redis caching in `backend/src/math/covariance.py`
-- [ ] T035 [US4] Implement portfolio-level Greek aggregation and portfolio Sharpe & Treynor in `backend/src/math/portfolio_risk.py`
-- [ ] T036 [US4] Implement portfolio risk analytics endpoint `POST /api/v1/risk/portfolio` in `backend/src/api/risk.py`
-- [ ] T037 [P] [US4] Implement executive Net Greeks summary cards (Net Delta, Net Vega, Net Gamma) in `frontend/src/components/dashboard/NetGreeksCards.tsx`
-- [ ] T038 [P] [US4] Implement interactive heat-mapped $N \times N$ Variance-Covariance matrix component in `frontend/src/components/risk/CovarianceMatrix.tsx`
-- [ ] T039 [US4] Implement correlation and portfolio risk analytics page in `frontend/src/app/correlation/page.tsx`
+- [X] T033 [P] [US4] Implement Black-Scholes and synthetic derivative Greek sensitivities (Delta, Gamma, Vega) in `backend/src/math/greeks.py`
+- [X] T034 [P] [US4] Implement high-dimensional $N \times N$ variance-covariance matrix and correlation calculations with Redis caching in `backend/src/math/covariance.py`
+- [X] T035 [US4] Implement portfolio-level Greek aggregation and portfolio Sharpe & Treynor in `backend/src/math/portfolio_risk.py`
+- [X] T036 [US4] Implement portfolio risk analytics endpoint `POST /api/v1/risk/portfolio` in `backend/src/api/risk.py`
+- [X] T037 [P] [US4] Implement executive Net Greeks summary cards (Net Delta, Net Vega, Net Gamma) in `frontend/src/components/dashboard/NetGreeksCards.tsx`
+- [X] T038 [P] [US4] Implement interactive heat-mapped $N \times N$ Variance-Covariance matrix component in `frontend/src/components/risk/CovarianceMatrix.tsx`
+- [X] T039 [US4] Implement correlation and portfolio risk analytics page in `frontend/src/app/correlation/page.tsx`
 
 **Checkpoint**: Portfolio Greek sensitivities and asset correlation matrix are fully functional.
 
@@ -133,16 +133,16 @@
 
 ### Implementation for User Story 5
 
-- [ ] T040 [P] [US5] Implement Parametric and Historical Value at Risk (VaR 95%/99%) and Expected Shortfall (CVaR 95%/99%) in `backend/src/math/tail_risk.py`
-- [ ] T041 [P] [US5] Implement rebalance advisor generating risk-reduction trade proposals in `backend/src/math/rebalance_advisor.py`
-- [ ] T042 [P] [US5] Implement read-only quote fetcher for 1inch Fusion and Uniswap in `backend/src/services/swaps.py`
-- [ ] T043 [US5] Implement risk report generation and rebalance quote endpoints in `backend/src/api/risk.py` and `backend/src/api/rebalance.py`
-- [ ] T044 [P] [US5] Implement Google GenAI Gemini copilot service with tool calling grounded in portfolio data in `backend/src/services/gemini.py`
-- [ ] T045 [US5] Implement copilot chat streaming endpoint `POST /api/v1/copilot/chat` in `backend/src/api/copilot.py`
-- [ ] T046 [P] [US5] Implement Risk Report generator and tail-risk distribution chart in `frontend/src/components/reports/RiskReportView.tsx`
-- [ ] T047 [P] [US5] Implement rebalancing proposal modal with pre-flight simulation and wallet signature prompt in `frontend/src/components/rebalance/RebalanceModal.tsx`
-- [ ] T048 [P] [US5] Implement Gemini chat copilot drawer UI with function calling transparency in `frontend/src/components/copilot/CopilotDrawer.tsx`
-- [ ] T049 [US5] Implement risk reports and rebalancing advisor page in `frontend/src/app/reports/page.tsx`
+- [X] T040 [P] [US5] Implement Parametric and Historical Value at Risk (VaR 95%/99%) and Expected Shortfall (CVaR 95%/99%) in `backend/src/math/tail_risk.py`
+- [X] T041 [P] [US5] Implement rebalance advisor generating risk-reduction trade proposals in `backend/src/math/rebalance_advisor.py`
+- [X] T042 [P] [US5] Implement read-only quote fetcher for 1inch Fusion and Uniswap in `backend/src/services/swaps.py`
+- [X] T043 [US5] Implement risk report generation and rebalance quote endpoints in `backend/src/api/risk.py` and `backend/src/api/rebalance.py`
+- [X] T044 [P] [US5] Implement Google GenAI Gemini copilot service with tool calling grounded in portfolio data in `backend/src/services/gemini.py`
+- [X] T045 [US5] Implement copilot chat streaming endpoint `POST /api/v1/copilot/chat` in `backend/src/api/copilot.py`
+- [X] T046 [P] [US5] Implement Risk Report generator and tail-risk distribution chart in `frontend/src/components/reports/RiskReportView.tsx`
+- [X] T047 [P] [US5] Implement rebalancing proposal modal with pre-flight simulation and wallet signature prompt in `frontend/src/components/rebalance/RebalanceModal.tsx`
+- [X] T048 [P] [US5] Implement Gemini chat copilot drawer UI with function calling transparency in `frontend/src/components/copilot/CopilotDrawer.tsx`
+- [X] T049 [US5] Implement risk reports and rebalancing advisor page in `frontend/src/app/reports/page.tsx`
 
 **Checkpoint**: End-to-end risk reporting, consensual rebalancing advisor, and AI copilot are fully functional.
 
@@ -152,11 +152,11 @@
 
 **Purpose**: Analytical test suites, graceful degradation indicators, and quickstart validation
 
-- [ ] T050 [P] Implement automated unit tests for math routines (Beta, Greeks, Covariance, VaR, CVaR) in `backend/tests/unit/test_math.py`
-- [ ] T051 [P] Implement integration tests for portfolio sync and rebalance quotes in `backend/tests/integration/test_portfolio_sync.py`
-- [ ] T052 Implement graceful degradation alerts and data provenance indicators across frontend views in `frontend/src/components/layout/ProvenanceAlert.tsx`
-- [ ] T053 Execute end-to-end validation scenarios per `specs/001-agentic-risk-manager/quickstart.md`
-- [ ] T054 [P] Finalize setup instructions and deployment documentation in `README.md`
+- [X] T050 [P] Implement automated unit tests for math routines (Beta, Greeks, Covariance, VaR, CVaR) in `backend/tests/unit/test_math.py`
+- [X] T051 [P] Implement integration tests for portfolio sync and rebalance quotes in `backend/tests/integration/test_portfolio_sync.py`
+- [X] T052 Implement graceful degradation alerts and data provenance indicators across frontend views in `frontend/src/components/layout/ProvenanceAlert.tsx`
+- [X] T053 Execute end-to-end validation scenarios per `specs/001-agentic-risk-manager/quickstart.md`
+- [X] T054 [P] Finalize setup instructions and deployment documentation in `README.md`
 
 ---
 
