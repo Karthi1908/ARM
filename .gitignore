@@ -52,3 +52,7 @@ Thumbs.db
 .idea/
 *.swp
 *.tmp
+*.db
+*.sqlite
+*.sqlite3
+

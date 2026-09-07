@@ -4,8 +4,11 @@ import React from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  // Use mock or user-provided Privy App ID
-  const privyAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID || "clrw6z0mockprivyappid";
+  // Privy strictly requires a 25-character appId string
+  const envAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+  const privyAppId = (envAppId && envAppId.length === 25)
+    ? envAppId
+    : "clrw6z0mockprivyappid1234";
 
   return (
     <PrivyProvider
