@@ -1,0 +1,81 @@
+[
+  {
+    "name": "get_portfolio_summary",
+    "description": "Retrieves high-level portfolio overview including total USD value, Net Greeks (Delta, Vega, Gamma), and portfolio Sharpe and Treynor ratios.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "wallet_address": {
+          "type": "STRING",
+          "description": "The user's active wallet address."
+        }
+      },
+      "required": ["wallet_address"]
+    }
+  },
+  {
+    "name": "get_single_deal_risk",
+    "description": "Retrieves quantitative risk metrics for an individual asset position: Beta (against Bitcoin), Delta, Volatility, Standard Deviation, Sharpe ratio (Rf=0), and Treynor ratio (Rf=0).",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "asset_id": {
+          "type": "STRING",
+          "description": "The asset symbol or ID (e.g. ETH, SOL, ONDO_USDY)."
+        },
+        "lookback_days": {
+          "type": "INTEGER",
+          "description": "Historical days lookback window (default 90)."
+        }
+      },
+      "required": ["asset_id"]
+    }
+  },
+  {
+    "name": "get_covariance_correlations",
+    "description": "Retrieves pairwise covariance and correlation metrics for the portfolio to identify concentration risks and high-correlation asset clusters.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "wallet_address": {
+          "type": "STRING",
+          "description": "The user's active wallet address."
+        }
+      },
+      "required": ["wallet_address"]
+    }
+  },
+  {
+    "name": "get_tail_risk_report",
+    "description": "Calculates 1-day 95% and 99% Value at Risk (VaR) and Expected Shortfall (CVaR) in USD for the current portfolio.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "wallet_address": {
+          "type": "STRING",
+          "description": "The user's active wallet address."
+        }
+      },
+      "required": ["wallet_address"]
+    }
+  },
+  {
+    "name": "propose_rebalance_plan",
+    "description": "Generates a proposed rebalancing plan to reduce portfolio risk or hedge net Delta/Vega. Important: The copilot can only propose, NEVER execute transactions.",
+    "parameters": {
+      "type": "OBJECT",
+      "properties": {
+        "wallet_address": {
+          "type": "STRING",
+          "description": "The user's active wallet address."
+        },
+        "target_risk_metric": {
+          "type": "STRING",
+          "enum": ["reduce_var", "hedge_delta", "diversify_correlation"],
+          "description": "The primary risk management objective."
+        }
+      },
+      "required": ["wallet_address", "target_risk_metric"]
+    }
+  }
+]

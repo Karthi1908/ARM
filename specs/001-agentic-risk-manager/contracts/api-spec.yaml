@@ -1,0 +1,316 @@
+openapi: 3.1.0
+info:
+  title: Crypto Risk Manager Core API
+  version: 1.0.0
+  description: High-performance quantitative risk engine, portfolio aggregation, and rebalance advisor API.
+paths:
+  /api/v1/auth/session:
+    post:
+      summary: Register or refresh non-custodial wallet session and resolve ENS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, auth_provider]
+              properties:
+                address:
+                  type: string
+                  example: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+                auth_provider:
+                  type: string
+                  enum: [privy, world_id, injected]
+      responses:
+        '200':
+          description: Active session with resolved ENS handle
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  address: { type: string }
+                  ens_name: { type: string, nullable: true }
+                  auth_provider: { type: string }
+
+  /api/v1/portfolio/{wallet_address}:
+    get:
+      summary: Retrieve unified portfolio positions (on-chain discovered + manual deals)
+      parameters:
+        - name: wallet_address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallet_address: { type: string }
+                  total_value_usd: { type: number }
+                  positions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Position'
+
+  /api/v1/portfolio/{wallet_address}/sync:
+    post:
+      summary: Trigger multi-chain balance discovery via The Graph and 1inch API
+      parameters:
+        - name: wallet_address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  discovered_count: { type: integer }
+                  chains_scanned: { type: array, items: { type: integer } }
+                  synced_at: { type: string, format: date-time }
+
+  /api/v1/blotter/{wallet_address}/deals:
+    get:
+      summary: List all manual deals for the wallet
+      parameters:
+        - name: wallet_address
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ManualDeal' }
+    post:
+      summary: Add a new manual deal (Crypto, RWA, Perps)
+      parameters:
+        - name: wallet_address
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewManualDeal' }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ManualDeal' }
+
+  /api/v1/risk/single:
+    post:
+      summary: Compute quantitative single-deal risk metrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset_id, lookback_days]
+              properties:
+                asset_id: { type: string }
+                lookback_days: { type: integer, default: 90 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  asset_id: { type: string }
+                  reference_index: { type: string, example: "BTC" }
+                  beta: { type: number, description: "Beta against Bitcoin" }
+                  delta: { type: number }
+                  volatility_annualized: { type: number }
+                  standard_deviation: { type: number }
+                  sharpe_ratio: { type: number, description: "Sharpe ratio with Rf=0" }
+                  treynor_ratio: { type: number, description: "Treynor ratio with Rf=0" }
+
+  /api/v1/risk/portfolio:
+    post:
+      summary: Compute aggregate Greeks, covariance matrix, and portfolio Sharpe & Treynor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wallet_address]
+              properties:
+                wallet_address: { type: string }
+                lookback_days: { type: integer, default: 90 }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  net_delta: { type: number }
+                  net_gamma: { type: number }
+                  net_vega: { type: number }
+                  sharpe_ratio: { type: number }
+                  treynor_ratio: { type: number }
+                  assets: { type: array, items: { type: string } }
+                  covariance_matrix:
+                    type: array
+                    items:
+                      type: array
+                      items: { type: number }
+
+  /api/v1/risk/report:
+    post:
+      summary: Generate comprehensive Risk Report with VaR, Expected Shortfall, and rebalance suggestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wallet_address]
+              properties:
+                wallet_address: { type: string }
+                confidence_levels: { type: array, items: { type: number }, default: [0.95, 0.99] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report_id: { type: string, format: uuid }
+                  timestamp: { type: string, format: date-time }
+                  var_95_usd: { type: number }
+                  var_99_usd: { type: number }
+                  es_95_usd: { type: number }
+                  es_99_usd: { type: number }
+                  rebalancing_suggestions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RebalanceAction'
+
+  /api/v1/rebalance/quote:
+    post:
+      summary: Fetch read-only swap quote from 1inch Fusion or Uniswap (NO execution)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chain_id, from_token, to_token, amount, venue]
+              properties:
+                chain_id: { type: integer }
+                from_token: { type: string }
+                to_token: { type: string }
+                amount: { type: string }
+                venue: { type: string, enum: [1inch, uniswap] }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  venue: { type: string }
+                  from_amount: { type: string }
+                  to_amount: { type: string }
+                  estimated_slippage_bps: { type: integer }
+                  gas_estimate_usd: { type: number }
+                  unsigned_tx:
+                    type: object
+                    properties:
+                      to: { type: string }
+                      data: { type: string }
+                      value: { type: string }
+
+  /api/v1/copilot/chat:
+    post:
+      summary: Send prompt to Gemini copilot with grounded tool calling on user portfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wallet_address, message]
+              properties:
+                wallet_address: { type: string }
+                message: { type: string }
+                conversation_id: { type: string, nullable: true }
+      responses:
+        '200':
+          description: Copilot streaming or JSON response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response_text: { type: string }
+                  tool_calls_executed: { type: array, items: { type: string } }
+                  proposed_rebalance:
+                    type: object
+                    nullable: true
+
+components:
+  schemas:
+    Position:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        asset_id: { type: string }
+        symbol: { type: string }
+        name: { type: string }
+        asset_class: { type: string, enum: [crypto, rwa, perpetual] }
+        source_type: { type: string, enum: [on_chain_discovered, manual_entry] }
+        chain_id: { type: integer, nullable: true }
+        quantity: { type: number }
+        unit_price_usd: { type: number }
+        total_value_usd: { type: number }
+
+    ManualDeal:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        asset_name: { type: string }
+        trade_date: { type: string, format: date }
+        side: { type: string, enum: [buy, sell] }
+        trade_type: { type: string, enum: [spot, forward, future, option_call, option_put] }
+        asset_class: { type: string, enum: [crypto, rwa, perpetual] }
+        settlement_date: { type: string, format: date, nullable: true }
+        venue: { type: string }
+        quantity: { type: number }
+        cost_basis_usd: { type: number }
+
+    NewManualDeal:
+      type: object
+      required: [asset_name, trade_date, side, trade_type, asset_class, venue, quantity, cost_basis_usd]
+      properties:
+        asset_name: { type: string }
+        trade_date: { type: string, format: date }
+        side: { type: string, enum: [buy, sell] }
+        trade_type: { type: string, enum: [spot, forward, future, option_call, option_put] }
+        asset_class: { type: string, enum: [crypto, rwa, perpetual] }
+        settlement_date: { type: string, format: date, nullable: true }
+        venue: { type: string }
+        quantity: { type: number }
+        cost_basis_usd: { type: number }
+
+    RebalanceAction:
+      type: object
+      properties:
+        action_type: { type: string, enum: [trim, accumulate, hedge] }
+        asset_id: { type: string }
+        target_delta_usd: { type: number }
+        rationale: { type: string }
+        recommended_venue: { type: string, enum: [1inch, uniswap] }
