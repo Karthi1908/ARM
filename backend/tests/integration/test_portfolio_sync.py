@@ -38,3 +38,26 @@ def test_rwa_verifier_chainlink_por():
     # Unverified asset
     res_unknown = rwa_verifier.verify_asset("UNKNOWN_COIN")
     assert res_unknown["verified"] is False
+
+@pytest.mark.asyncio
+async def test_the_graph_isolated_without_blockscout():
+    from backend.src.services.indexer import MultiChainIndexer, CHAIN_METADATA
+    indexer = MultiChainIndexer()
+    test_addr = "0x50ec05ade8280758e2077fcbc08d878d4aef79c3"
+
+    original_apis = {c: meta.get("blockscout_api") for c, meta in CHAIN_METADATA.items()}
+    try:
+        # Disable blockscout to test purely The Graph + Native RPCs
+        for meta in CHAIN_METADATA.values():
+            meta["blockscout_api"] = ""
+
+        holdings = await indexer.fetch_onchain_holdings(test_addr)
+        assert len(holdings) > 0
+        graph_holdings = [h for h in holdings if h.get("price_source") == "the_graph"]
+        assert len(graph_holdings) > 0
+        symbols = [h["symbol"] for h in graph_holdings]
+        assert any(s in symbols for s in ["WETH", "USDC", "DAI", "USDT", "UNI"])
+    finally:
+        for c, api in original_apis.items():
+            CHAIN_METADATA[c]["blockscout_api"] = api
+

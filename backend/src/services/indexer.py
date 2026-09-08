@@ -118,70 +118,71 @@ class MultiChainIndexer:
                 discovered_symbols.add(gh["symbol"])
 
             # 3. Fetch ERC-20 Token Balances via Explorer API (Fallback & General ERC-20s)
-            try:
-                tokens_url = f"{meta['blockscout_api']}/addresses/{wallet_address}/tokens"
-                resp = await client.get(tokens_url)
-                if resp.status_code == 200:
-                    items = resp.json().get("items", [])
-                    for item in items:
-                        tok = item.get("token", {})
-                        symbol = tok.get("symbol")
-                        if not symbol:
-                            continue
-                        
-                        symbol_clean = str(symbol).strip().upper()
-                        # Deduplicate if already indexed via The Graph
-                        if symbol_clean in discovered_symbols:
-                            continue
+            if meta.get("blockscout_api"):
+                try:
+                    tokens_url = f"{meta['blockscout_api']}/addresses/{wallet_address}/tokens"
+                    resp = await client.get(tokens_url)
+                    if resp.status_code == 200:
+                        items = resp.json().get("items", [])
+                        for item in items:
+                            tok = item.get("token", {})
+                            symbol = tok.get("symbol")
+                            if not symbol:
+                                continue
+                            
+                            symbol_clean = str(symbol).strip().upper()
+                            # Deduplicate if already indexed via The Graph
+                            if symbol_clean in discovered_symbols:
+                                continue
 
-                        # Reject spam / phishing token tickers
-                        if len(symbol_clean) > 12 or any(p in symbol_clean.lower() for p in SPAM_PATTERNS):
-                            continue
+                            # Reject spam / phishing token tickers
+                            if len(symbol_clean) > 12 or any(p in symbol_clean.lower() for p in SPAM_PATTERNS):
+                                continue
 
-                        name = tok.get("name") or symbol_clean
-                        if any(p in name.lower() for p in SPAM_PATTERNS):
-                            continue
+                            name = tok.get("name") or symbol_clean
+                            if any(p in name.lower() for p in SPAM_PATTERNS):
+                                continue
 
-                        decimals = int(tok.get("decimals") or 18)
-                        raw_val = int(item.get("value") or 0)
-                        qty = raw_val / (10 ** decimals)
-                        if qty <= 0.000001:
-                            continue
+                            decimals = int(tok.get("decimals") or 18)
+                            raw_val = int(item.get("value") or 0)
+                            qty = raw_val / (10 ** decimals)
+                            if qty <= 0.000001:
+                                continue
 
-                        # Resolve USD price
-                        exchange_rate = tok.get("exchange_rate")
-                        if exchange_rate and float(exchange_rate) > 0:
-                            price = float(exchange_rate)
-                            source = "blockscout_dex"
-                            ts = 0.0
-                        else:
-                            price, source, ts = await oracle_service.get_price(symbol_clean)
+                            # Resolve USD price
+                            exchange_rate = tok.get("exchange_rate")
+                            if exchange_rate and float(exchange_rate) > 0:
+                                price = float(exchange_rate)
+                                source = "blockscout_dex"
+                                ts = 0.0
+                            else:
+                                price, source, ts = await oracle_service.get_price(symbol_clean)
 
-                        total_val = qty * price
-                        # Filter out microscopic dust / spam airdrops with zero economic value
-                        if total_val < 0.10:
-                            continue
+                            total_val = qty * price
+                            # Filter out microscopic dust / spam airdrops with zero economic value
+                            if total_val < 0.10:
+                                continue
 
-                        contract_addr = tok.get("address") or tok.get("address_hash") or ""
-                        contract_suffix = f"_{contract_addr[-6:].lower()}" if contract_addr else ""
-                        asset_id = f"{symbol_clean}_{chain_id}{contract_suffix}"
+                            contract_addr = tok.get("address") or tok.get("address_hash") or ""
+                            contract_suffix = f"_{contract_addr[-6:].lower()}" if contract_addr else ""
+                            asset_id = f"{symbol_clean}_{chain_id}{contract_suffix}"
 
-                        holdings.append({
-                            "asset_id": asset_id,
-                            "symbol": symbol_clean,
-                            "name": name[:120],
-                            "asset_class": "crypto",
-                            "source_type": "on_chain_discovered",
-                            "chain_id": chain_id,
-                            "quantity": round(qty, 6),
-                            "unit_price_usd": price,
-                            "total_value_usd": round(total_val, 2),
-                            "price_source": source,
-                            "timestamp": ts
-                        })
-                        discovered_symbols.add(symbol_clean)
-            except Exception as e:
-                logger.warning(f"Error querying token holdings on chain {chain_id} for {wallet_address}: {e}")
+                            holdings.append({
+                                "asset_id": asset_id,
+                                "symbol": symbol_clean,
+                                "name": name[:120],
+                                "asset_class": "crypto",
+                                "source_type": "on_chain_discovered",
+                                "chain_id": chain_id,
+                                "quantity": round(qty, 6),
+                                "unit_price_usd": price,
+                                "total_value_usd": round(total_val, 2),
+                                "price_source": source,
+                                "timestamp": ts
+                            })
+                            discovered_symbols.add(symbol_clean)
+                except Exception as e:
+                    logger.warning(f"Error querying token holdings on chain {chain_id} for {wallet_address}: {e}")
 
         return holdings
 
