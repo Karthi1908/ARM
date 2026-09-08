@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { WalletProvider } from "@/context/WalletContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   // Privy strictly requires a 25-character appId string
@@ -25,7 +26,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }}
     >
-      {children}
+      <WalletProvider>
+        {children}
+      </WalletProvider>
     </PrivyProvider>
   );
 }

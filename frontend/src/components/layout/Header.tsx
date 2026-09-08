@@ -1,50 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
-import { Shield, Wallet, RefreshCw, BarChart3, BookOpen, Layers, FileText, CheckCircle } from "lucide-react";
+import { useActiveWallet } from "@/context/WalletContext";
+import { Shield, Wallet, RefreshCw, BarChart3, BookOpen, Layers, FileText, CheckCircle, Search, X } from "lucide-react";
 
 export function Header() {
   const pathname = usePathname();
-  const { ready, authenticated, user, login, logout } = usePrivy();
-  const [ensName, setEnsName] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const { authenticated, login, logout } = usePrivy();
+  const { activeAddress, ensName, isConnected, isSyncing, setActiveAddress, syncPortfolio } = useActiveWallet();
 
-  // Fallback demo address if unauthenticated
-  const activeAddress = authenticated && user?.wallet?.address 
-    ? user.wallet.address 
-    : "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
+  const [inputAddress, setInputAddress] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
-    if (activeAddress) {
-      // Fetch session and ENS from backend
-      fetch("http://localhost:8000/api/v1/auth/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: activeAddress, auth_provider: "privy" }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.ens_name) setEnsName(data.ens_name);
-        })
-        .catch(() => {});
-    }
-  }, [activeAddress]);
-
-  const handleSync = async () => {
-    setIsSyncing(true);
-    try {
-      await fetch(`http://localhost:8000/api/v1/portfolio/${activeAddress}/sync`, {
-        method: "POST",
-      });
-      window.dispatchEvent(new Event("portfolio-updated"));
-    } catch (e) {
-      console.error("Sync failed:", e);
-    } finally {
-      setTimeout(() => setIsSyncing(false), 800);
-    }
+  const handleInspectSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = inputAddress.trim();
+    if (!clean) return;
+    setActiveAddress(clean);
+    setIsSearching(false);
   };
 
   const navItems = [
@@ -92,7 +68,7 @@ export function Header() {
             </div>
             <div style={{ fontSize: "0.7rem", color: "var(--status-positive)", display: "flex", alignItems: "center", gap: "4px" }}>
               <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "var(--status-positive)", display: "inline-block" }}></span>
-              Non-Custodial | EVM Core
+              Live Multi-Chain | Real Holdings Only
             </div>
           </div>
         </Link>
@@ -128,22 +104,62 @@ export function Header() {
           })}
         </nav>
 
-        {/* Actions & Wallet Session */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {/* Sync Button */}
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="btn btn-secondary"
-            style={{ padding: "8px 12px", fontSize: "0.8rem" }}
-            title="Scan & sync on-chain holdings via The Graph"
-          >
-            <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} style={{ animation: isSyncing ? "spin 1s linear infinite" : "none" }} />
-            {isSyncing ? "Syncing..." : "Sync"}
-          </button>
+        {/* Address Search & Wallet Session Actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Quick Inspect Input Toggle */}
+          {isSearching ? (
+            <form onSubmit={handleInspectSubmit} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <input
+                type="text"
+                placeholder="Enter 0x... address"
+                value={inputAddress}
+                onChange={(e) => setInputAddress(e.target.value)}
+                style={{
+                  padding: "6px 10px",
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text-primary)",
+                  fontSize: "0.8rem",
+                  width: "200px"
+                }}
+                autoFocus
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: "6px 10px", fontSize: "0.75rem" }}>
+                Load
+              </button>
+              <button type="button" onClick={() => setIsSearching(false)} className="btn btn-secondary" style={{ padding: "6px 8px" }}>
+                <X size={12} />
+              </button>
+            </form>
+          ) : (
+            <button
+              onClick={() => setIsSearching(true)}
+              className="btn btn-secondary"
+              style={{ padding: "8px 10px", fontSize: "0.8rem" }}
+              title="Inspect any public address"
+            >
+              <Search size={14} />
+              <span>Inspect</span>
+            </button>
+          )}
 
-          {/* ENS / Wallet Button */}
-          {authenticated ? (
+          {/* Sync On-Chain Button */}
+          {activeAddress && (
+            <button
+              onClick={syncPortfolio}
+              disabled={isSyncing}
+              className="btn btn-secondary"
+              style={{ padding: "8px 12px", fontSize: "0.8rem" }}
+              title="Rescan on-chain balances across 5 EVM chains"
+            >
+              <RefreshCw size={14} style={{ animation: isSyncing ? "spin 1s linear infinite" : "none" }} />
+              {isSyncing ? "Scanning..." : "Sync"}
+            </button>
+          )}
+
+          {/* Active Wallet Display / Privy Login */}
+          {isConnected && activeAddress ? (
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <div className="badge badge-neutral" style={{ padding: "6px 10px" }}>
                 <CheckCircle size={12} color="var(--status-positive)" />
@@ -153,6 +169,27 @@ export function Header() {
               </div>
               <button onClick={logout} className="btn btn-secondary" style={{ padding: "6px 12px", fontSize: "0.75rem" }}>
                 Disconnect
+              </button>
+            </div>
+          ) : activeAddress ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div className="badge badge-neutral" style={{ padding: "6px 10px" }}>
+                <span style={{ fontSize: "0.75rem", color: "var(--accent-secondary)", marginRight: "4px" }}>Viewing:</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem" }}>
+                  {ensName || `${activeAddress.slice(0, 6)}...${activeAddress.slice(-4)}`}
+                </span>
+              </div>
+              <button
+                onClick={() => setActiveAddress(null)}
+                className="btn btn-secondary"
+                style={{ padding: "6px 8px" }}
+                title="Clear address"
+              >
+                <X size={12} />
+              </button>
+              <button onClick={login} className="btn btn-primary" style={{ padding: "8px 14px", fontSize: "0.8rem" }}>
+                <Wallet size={14} />
+                Connect
               </button>
             </div>
           ) : (

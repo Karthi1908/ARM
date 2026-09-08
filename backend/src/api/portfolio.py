@@ -18,29 +18,31 @@ async def get_portfolio(
     wallet_address: str,
     db: AsyncSession = Depends(get_db)
 ):
-    """Fetches consolidated portfolio holdings (both on-chain discovered and manual blotter deals)."""
-    addr_lower = wallet_address.lower()
+    """Fetches consolidated portfolio holdings (both actual on-chain discovered balances and manual blotter deals)."""
+    addr_lower = wallet_address.lower().strip()
 
-    # Query active positions from database
+    # Query active on-chain discovered positions from database
     stmt = select(Position).where(Position.wallet_address == addr_lower)
     result = await db.execute(stmt)
     positions = result.scalars().all()
 
-    # If no positions exist in DB yet, trigger initial auto-sync
+    # If no on-chain positions exist in DB yet, trigger initial live auto-discovery
     if not positions:
         holdings = await indexer_service.fetch_onchain_holdings(addr_lower)
+        seen_assets = set()
         for h in holdings:
-            # Ensure asset exists
-            asset_stmt = select(Asset).where(Asset.id == h["asset_id"])
-            asset_res = await db.execute(asset_stmt)
-            if not asset_res.scalar_one_or_none():
-                db.add(Asset(
-                    id=h["asset_id"],
-                    symbol=h["symbol"],
-                    name=h["name"],
-                    asset_class=h["asset_class"],
-                    is_benchmark=(h["asset_id"] == "BTC")
-                ))
+            if h["asset_id"] not in seen_assets:
+                seen_assets.add(h["asset_id"])
+                asset_stmt = select(Asset).where(Asset.id == h["asset_id"])
+                asset_res = await db.execute(asset_stmt)
+                if not asset_res.scalar_one_or_none():
+                    db.add(Asset(
+                        id=h["asset_id"],
+                        symbol=h["symbol"],
+                        name=h["name"][:120],
+                        asset_class=h["asset_class"],
+                        is_benchmark=(h["symbol"].upper() == "BTC")
+                    ))
             
             p = Position(
                 wallet_address=addr_lower,
@@ -52,16 +54,18 @@ async def get_portfolio(
                 total_value_usd=h["total_value_usd"]
             )
             db.add(p)
-        await db.commit()
-        # Re-query
-        result = await db.execute(stmt)
-        positions = result.scalars().all()
+        if holdings:
+            await db.commit()
+            result = await db.execute(stmt)
+            positions = result.scalars().all()
 
-    # Format response with asset details
     pos_responses = []
     total_val = 0.0
 
+    # 1. On-chain discovered positions
     for pos in positions:
+        if pos.source_type != "on_chain_discovered":
+            continue
         asset_stmt = select(Asset).where(Asset.id == pos.asset_id)
         asset_res = await db.execute(asset_stmt)
         asset = asset_res.scalar_one_or_none()
@@ -83,7 +87,32 @@ async def get_portfolio(
             chain_id=pos.chain_id,
             quantity=float(pos.quantity),
             unit_price_usd=float(pos.unit_price_usd),
-            total_value_usd=val
+            total_value_usd=round(val, 2)
+        ))
+
+    # 2. Manual blotter deals
+    deals_stmt = select(ManualDeal).where(ManualDeal.wallet_address == addr_lower)
+    deals_res = await db.execute(deals_stmt)
+    manual_deals = deals_res.scalars().all()
+
+    for deal in manual_deals:
+        # Get live or cost-basis price
+        price, _, _ = await oracle_service.get_price(deal.asset_name)
+        qty = float(deal.quantity) if deal.side == "buy" else -float(deal.quantity)
+        val = abs(qty) * price
+        total_val += val
+
+        pos_responses.append(PositionResponse(
+            id=deal.id,
+            asset_id=f"{deal.asset_name.upper()}_MANUAL",
+            symbol=deal.asset_name.upper(),
+            name=f"{deal.asset_name} ({deal.venue})",
+            asset_class=deal.asset_class,
+            source_type="manual_entry",
+            chain_id=None,
+            quantity=qty,
+            unit_price_usd=price,
+            total_value_usd=round(val, 2)
         ))
 
     return PortfolioResponse(
@@ -97,29 +126,32 @@ async def sync_portfolio(
     wallet_address: str,
     db: AsyncSession = Depends(get_db)
 ):
-    """Triggers live balance discovery across EVM chains via The Graph & 1inch fallback."""
-    addr_lower = wallet_address.lower()
+    """Triggers live on-chain balance discovery across EVM chains via public RPCs and Blockscout explorers."""
+    addr_lower = wallet_address.lower().strip()
 
-    # Delete previous on-chain discovered positions to refresh
+    # Clear previous on-chain discovered positions to refresh with latest chain data
     del_stmt = delete(Position).where(
         Position.wallet_address == addr_lower,
         Position.source_type == "on_chain_discovered"
     )
     await db.execute(del_stmt)
 
-    # Discover latest holdings
+    # Discover live on-chain holdings
     holdings = await indexer_service.fetch_onchain_holdings(addr_lower)
+    seen_assets = set()
     for h in holdings:
-        asset_stmt = select(Asset).where(Asset.id == h["asset_id"])
-        asset_res = await db.execute(asset_stmt)
-        if not asset_res.scalar_one_or_none():
-            db.add(Asset(
-                id=h["asset_id"],
-                symbol=h["symbol"],
-                name=h["name"],
-                asset_class=h["asset_class"],
-                is_benchmark=(h["asset_id"] == "BTC")
-            ))
+        if h["asset_id"] not in seen_assets:
+            seen_assets.add(h["asset_id"])
+            asset_stmt = select(Asset).where(Asset.id == h["asset_id"])
+            asset_res = await db.execute(asset_stmt)
+            if not asset_res.scalar_one_or_none():
+                db.add(Asset(
+                    id=h["asset_id"],
+                    symbol=h["symbol"],
+                    name=h["name"][:120],
+                    asset_class=h["asset_class"],
+                    is_benchmark=(h["symbol"].upper() == "BTC")
+                ))
 
         db.add(Position(
             wallet_address=addr_lower,

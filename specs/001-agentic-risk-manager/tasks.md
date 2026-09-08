@@ -200,3 +200,9 @@
 3. Add US3 → Single-position risk diagnostics (Beta vs BTC, Volatility, Sharpe, Treynor).
 4. Add US4 → Portfolio Net Greeks and interactive Covariance Matrix.
 5. Add US5 → VaR / Expected Shortfall reports, consensual 1inch/Uniswap rebalancing, and Gemini Copilot.
+
+---
+
+## Phase 9: Convergence
+
+- [X] T055 Integrate The Graph Protocol decentralized subgraphs / Token API queries for multi-chain ERC-20 token balance discovery with fallback to Blockscout/RPC per Constitution I, T015, and plan: indexer.py (partial)

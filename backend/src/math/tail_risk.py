@@ -12,7 +12,15 @@ def calculate_tail_risk(
     Computes 1-day Value at Risk (VaR) and Expected Shortfall (CVaR/ES)
     at 95% and 99% confidence horizons in USD.
     """
-    port_val = max(portfolio_value_usd, 1.0)
+    if portfolio_value_usd <= 0.0:
+        return {
+            "var_95_usd": 0.0,
+            "var_99_usd": 0.0,
+            "es_95_usd": 0.0,
+            "es_99_usd": 0.0
+        }
+
+    port_val = portfolio_value_usd
     mu = portfolio_daily_return
     sigma = max(portfolio_daily_vol, 0.001)
 
