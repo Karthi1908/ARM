@@ -61,8 +61,8 @@ Unified table of active holdings, combining auto-discovered on-chain tokens and 
 | `source_type` | `VARCHAR(32)` | `NOT NULL` | Enum: `on_chain_discovered`, `manual_entry` |
 | `chain_id` | `INT` | `NULLABLE` | EVM Chain ID (1, 42161, 10, 8453, 137) |
 | `quantity` | `NUMERIC(38, 18)`| `NOT NULL` | Holding amount (negative for short perps) |
-| `unit_price_usd` | `NUMERIC(24, 8)` | `NOT NULL` | Latest marked USD price |
-| `total_value_usd` | `NUMERIC(24, 2)` | `NOT NULL` | $quantity \times unit\_price\_usd$ |
+| `unit_price_usd` | `NUMERIC(24, 8)` | `NOT NULL, DEFAULT 0` | Latest marked USD price ($0.00 if unpriced on CoinGecko) |
+| `total_value_usd` | `NUMERIC(24, 2)` | `NOT NULL, DEFAULT 0` | $quantity \times unit\_price\_usd$ ($0.00 if unpriced) |
 | `updated_at` | `TIMESTAMPTZ` | `DEFAULT NOW()` | Last update timestamp |
 
 ### 2.4 `manual_deals`
@@ -148,3 +148,15 @@ Stores generated rebalance proposals, risk reduction simulations, and quotes.
 ```
 
 **Guardrail**: The state can NEVER transition to `EXECUTED` automatically from the backend. The transition requires the client frontend to present a valid transaction hash signed by the user's connected wallet.
+
+---
+
+## 4. Zero-Valuation & Unpriced Asset Modeling Rules
+
+1. **Storage & Blotter Visibility**:
+   - Positions where CoinGecko pricing is unavailable MUST be stored with `unit_price_usd = 0.00` and `total_value_usd = 0.00`.
+   - The blotter UI displays these assets for complete inventory auditability with an `unpriced_zero` badge.
+2. **Portfolio Risk Engine Filtering**:
+   - The quantitative risk engine filters out positions where `total_value_usd <= 0.00` when computing asset weights:
+     $$w_i = \frac{v_i}{\sum_{j=1, v_j > 0}^M v_j}$$
+   - This ensures zero-valued assets do not create NaN / division-by-zero errors in the Variance-Covariance matrix, Portfolio Beta, Net Greeks, Sharpe, and Treynor calculations.

@@ -132,10 +132,30 @@ export function HoldingsTable({ positions, onSelectPosition, selectedAssetId }: 
                       {pos.quantity.toLocaleString(undefined, { maximumFractionDigits: 4 })}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "right" }} className="mono-num">
-                      ${pos.unit_price_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {pos.unit_price_usd > 0 ? (
+                        `$${pos.unit_price_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ) : (
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          fontSize: "0.75rem",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          background: "rgba(255, 255, 255, 0.05)",
+                          color: "var(--text-muted)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)"
+                        }}>
+                          $0.00 <span style={{ fontSize: "0.65rem", opacity: 0.75 }}>Unpriced</span>
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "right", fontWeight: 700 }} className="mono-num">
-                      ${pos.total_value_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {pos.total_value_usd > 0 ? (
+                        `$${pos.total_value_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      ) : (
+                        <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>$0.00</span>
+                      )}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "center" }}>
                       <button className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem" }}>

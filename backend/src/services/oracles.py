@@ -2,6 +2,7 @@ import time
 import logging
 import httpx
 from typing import Dict, Any, Tuple
+from backend.src.core.config import settings
 from backend.src.core.redis_client import redis_manager
 
 logger = logging.getLogger(__name__)
@@ -44,27 +45,45 @@ SEED_TOP_TOKENS: Dict[str, Dict[str, Any]] = {
 
 class PriceOracleService:
     def __init__(self):
-        self.coingecko_base = "https://api.coingecko.com/api/v3"
-        self._top_200_cache: Dict[str, Dict[str, Any]] = {}
-        self._top_200_fetched_at: float = 0.0
+        self._top_cache: Dict[str, Dict[str, Any]] = {}
+        self._top_fetched_at: float = 0.0
         self._cache_ttl_seconds: float = 300.0  # 5 minutes
 
-    async def _refresh_coingecko_top_200(self) -> None:
+    def _get_api_config(self) -> Tuple[str, Dict[str, str]]:
         """
-        Queries CoinGecko for the top 200 ranked coins by market cap.
-        Caches results in memory and Redis.
+        Determines base URL and headers based on optional COINGECKO_API_KEY.
+        - Demo keys (start with 'CG-'): uses https://api.coingecko.com/api/v3 with header x-cg-demo-api-key
+        - Pro keys: uses https://pro-api.coingecko.com/api/v3 with header x-cg-pro-api-key
+        - Public / No key: uses https://api.coingecko.com/api/v3
         """
-        url = f"{self.coingecko_base}/coins/markets"
-        params = {
-            "vs_currency": "usd",
-            "order": "market_cap_desc",
-            "per_page": "200",
-            "page": "1",
-            "sparkline": "false"
-        }
+        key = getattr(settings, "COINGECKO_API_KEY", "").strip()
         headers = {
             "User-Agent": "AgenticRiskManager/1.0",
             "Accept": "application/json"
+        }
+        if not key:
+            return "https://api.coingecko.com/api/v3", headers
+
+        if key.startswith("CG-"):
+            headers["x-cg-demo-api-key"] = key
+            return "https://api.coingecko.com/api/v3", headers
+        else:
+            headers["x-cg-pro-api-key"] = key
+            return "https://pro-api.coingecko.com/api/v3", headers
+
+    async def _refresh_coingecko_top(self) -> None:
+        """
+        Queries CoinGecko for the top 250 ranked coins by market cap.
+        Caches results in memory and Redis.
+        """
+        base_url, headers = self._get_api_config()
+        url = f"{base_url}/coins/markets"
+        params = {
+            "vs_currency": "usd",
+            "order": "market_cap_desc",
+            "per_page": "250",
+            "page": "1",
+            "sparkline": "false"
         }
 
         try:
@@ -80,60 +99,75 @@ class PriceOracleService:
                         rank = int(item.get("market_cap_rank") or 999)
                         price = float(item.get("current_price") or 0.0)
 
-                        # Only accept if within top 200
-                        if rank <= 200:
-                            if sym not in new_cache or rank < new_cache[sym]["rank"]:
-                                new_cache[sym] = {
-                                    "price": price,
-                                    "rank": rank,
-                                    "name": item.get("name", sym),
-                                    "id": item.get("id", "")
-                                }
+                        if sym not in new_cache or rank < new_cache[sym]["rank"]:
+                            new_cache[sym] = {
+                                "price": price,
+                                "rank": rank,
+                                "name": item.get("name", sym),
+                                "id": item.get("id", "")
+                            }
 
                     if new_cache:
-                        self._top_200_cache = new_cache
-                        self._top_200_fetched_at = time.time()
-                        await redis_manager.set("coingecko:top_200", new_cache, ttl_seconds=int(self._cache_ttl_seconds))
-                        logger.info(f"Refreshed CoinGecko top 200 market data: {len(new_cache)} symbols cached.")
+                        self._top_cache = new_cache
+                        self._top_fetched_at = time.time()
+                        await redis_manager.set("coingecko:top_markets", new_cache, ttl_seconds=int(self._cache_ttl_seconds))
+                        logger.info(f"Refreshed CoinGecko market data: {len(new_cache)} symbols cached.")
                         return
                 elif resp.status_code == 429:
                     logger.warning("CoinGecko API rate limit (429) hit; using existing cache / seed fallback.")
                 else:
                     logger.warning(f"CoinGecko API returned status {resp.status_code}: {resp.text[:200]}")
         except Exception as e:
-            logger.warning(f"Failed to fetch CoinGecko top 200: {e}")
+            logger.warning(f"Failed to fetch CoinGecko market data: {e}")
 
         # If empty and fetch failed, try Redis
-        if not self._top_200_cache:
-            redis_cached = await redis_manager.get("coingecko:top_200")
+        if not self._top_cache:
+            redis_cached = await redis_manager.get("coingecko:top_markets") or await redis_manager.get("coingecko:top_200")
             if redis_cached and isinstance(redis_cached, dict):
-                self._top_200_cache = redis_cached
-                self._top_200_fetched_at = time.time()
+                self._top_cache = redis_cached
+                self._top_fetched_at = time.time()
                 return
 
         # Emergency fallback to seed tokens if cache is still empty
-        if not self._top_200_cache:
-            self._top_200_cache = SEED_TOP_TOKENS.copy()
-            self._top_200_fetched_at = time.time()
+        if not self._top_cache:
+            self._top_cache = SEED_TOP_TOKENS.copy()
+            self._top_fetched_at = time.time()
 
-    async def _ensure_top_200_cache(self) -> None:
-        """Ensures the top 200 cache is populated and not expired."""
+    async def _ensure_top_cache(self) -> None:
+        """Ensures the top market cache is populated and not expired."""
         now = time.time()
-        if not self._top_200_cache or (now - self._top_200_fetched_at) > self._cache_ttl_seconds:
-            redis_cached = await redis_manager.get("coingecko:top_200")
+        if not self._top_cache or (now - self._top_fetched_at) > self._cache_ttl_seconds:
+            redis_cached = await redis_manager.get("coingecko:top_markets") or await redis_manager.get("coingecko:top_200")
             if redis_cached and isinstance(redis_cached, dict):
-                self._top_200_cache = redis_cached
-                self._top_200_fetched_at = now
+                self._top_cache = redis_cached
+                self._top_fetched_at = now
             else:
-                await self._refresh_coingecko_top_200()
+                await self._refresh_coingecko_top()
+
+    async def _query_single_coingecko_symbol(self, symbol: str) -> float:
+        """Attempts direct CoinGecko lookup for a symbol outside the top 250."""
+        base_url, headers = self._get_api_config()
+        try:
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                url = f"{base_url}/coins/markets"
+                params = {"vs_currency": "usd", "symbols": symbol.lower()}
+                resp = await client.get(url, params=params, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data and isinstance(data, list):
+                        return float(data[0].get("current_price") or 0.0)
+        except Exception as e:
+            logger.debug(f"Direct CoinGecko query failed for {symbol}: {e}")
+        return 0.0
 
     async def get_price(self, symbol: str) -> Tuple[float, str, float]:
         """
         Returns (price_usd, source_provenance, timestamp).
         Rules:
-        - Checks CoinGecko top 200 token ranking.
-        - If the token is in the top 200, returns real CoinGecko price with source 'coingecko'.
-        - If the token is NOT in the first 200 token ranking, returns price 0.0 with source 'unranked_zero'.
+        - Checks CoinGecko cached top market tokens.
+        - If not in top cache, attempts targeted CoinGecko lookup.
+        - If token is verified on CoinGecko, returns price with source 'coingecko'.
+        - If the token is NOT found or unlisted on CoinGecko, strictly returns price 0.0 with source 'unpriced_zero'.
         """
         symbol_clean = symbol.upper().replace("$", "").strip()
         ts = time.time()
@@ -148,20 +182,26 @@ class PriceOracleService:
         if cached:
             return float(cached["price"]), cached["source"], float(cached["timestamp"])
 
-        # Ensure top 200 rankings are loaded
-        await self._ensure_top_200_cache()
+        # Ensure top market rankings are loaded
+        await self._ensure_top_cache()
 
         # Check alias (e.g. WETH -> ETH, WBTC -> BTC, ONDO_USDY -> USDY)
         lookup_sym = TOKEN_ALIASES.get(symbol_clean, symbol_clean)
-        coin_info = self._top_200_cache.get(lookup_sym)
+        coin_info = self._top_cache.get(lookup_sym)
 
-        if coin_info and coin_info.get("rank", 999) <= 200:
+        if coin_info:
             price = float(coin_info.get("price") or 0.0)
-            source = "coingecko"
+            source = "coingecko" if price > 0 else "unpriced_zero"
         else:
-            # Token is not in first 200 token ranking -> mark price as 0
-            price = 0.0
-            source = "unranked_zero"
+            # Attempt direct CoinGecko lookup for long-tail token
+            direct_price = await self._query_single_coingecko_symbol(lookup_sym)
+            if direct_price > 0:
+                price = direct_price
+                source = "coingecko"
+            else:
+                # Token is unlisted or missing on CoinGecko -> mark price strictly as 0.0
+                price = 0.0
+                source = "unpriced_zero"
 
         # Cache symbol price in Redis for 60 seconds
         await redis_manager.set(cache_key, {"price": price, "source": source, "timestamp": ts}, ttl_seconds=60)

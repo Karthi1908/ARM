@@ -275,8 +275,9 @@ components:
         source_type: { type: string, enum: [on_chain_discovered, manual_entry] }
         chain_id: { type: integer, nullable: true }
         quantity: { type: number }
-        unit_price_usd: { type: number }
-        total_value_usd: { type: number }
+        unit_price_usd: { type: number, description: "Marked price in USD (0.00 if unpriced on CoinGecko)" }
+        total_value_usd: { type: number, description: "Total USD valuation (0.00 if unpriced)" }
+        price_source: { type: string, nullable: true, description: "Provenance source tag (e.g. coingecko, unpriced_zero)" }
 
     ManualDeal:
       type: object

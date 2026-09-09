@@ -14,6 +14,7 @@ This guide walks through end-to-end local environment setup and validation scena
   - `GEMINI_API_KEY`: [Google AI Studio](https://aistudio.google.com/)
   - `THE_GRAPH_API_KEY`: [The Graph Studio](https://thegraph.com/studio/)
   - `ONEINCH_API_KEY`: [1inch Developer Portal](https://portal.1inch.dev/)
+  - `COINGECKO_API_KEY` *(Optional)*: [CoinGecko Developer Dashboard](https://www.coingecko.com/en/api) (supports Demo and Pro API tiers)
 
 ---
 
@@ -76,6 +77,13 @@ npm run dev
 4. **Expected Outcome**:
    - Manual deal is saved (`POST /api/v1/blotter/{address}/deals`).
    - Consolidated portfolio total USD valuation immediately updates.
+   - Any unlisted token or token without CoinGecko market pricing is displayed with unit price `$0.00` and total value `$0.00` (provenance: `unpriced_zero`), remaining visible in the blotter without corrupting total valuations.
+
+### Scenario 2a: Unpriced Asset Zero-Valuation & Math Guardrail
+1. If a wallet holds long-tail or testnet tokens unlisted on CoinGecko:
+   - Position appears in the table with `$0.00` Unit Price and `$0.00` Value.
+2. Inspect the Portfolio Risk dashboard and Covariance matrix:
+   - **Expected Outcome**: The $0.00 asset is cleanly filtered out from portfolio weights ($w_i = 0$), preventing division-by-zero errors in Beta, Sharpe, Treynor, and Covariance calculations.
 
 ### Scenario 3: Single-Deal Risk Analytics Inspection
 1. Click on any asset row (e.g., `ETH`).

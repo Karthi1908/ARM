@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     THE_GRAPH_API_KEY: str = os.getenv("THE_GRAPH_API_KEY", "")
     ONEINCH_API_KEY: str = os.getenv("ONEINCH_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
+    COINGECKO_API_KEY: str = os.getenv("COINGECKO_API_KEY", "")
     
     # Discovery Indexer Feature Toggles
     ENABLE_THE_GRAPH: bool = os.getenv("ENABLE_THE_GRAPH", "true").lower() in ("true", "1", "yes")

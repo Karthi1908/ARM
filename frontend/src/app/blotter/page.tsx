@@ -91,7 +91,7 @@ export default function BlotterPage() {
       </div>
 
       {/* Blotter Data Table */}
-      <BlotterTable deals={deals} onDeleteDeal={handleDelete} />
+      <BlotterTable deals={deals} onDeleteDeal={handleDelete} walletAddress={activeAddress} />
 
       {/* Deal Entry Modal */}
       {isModalOpen && (

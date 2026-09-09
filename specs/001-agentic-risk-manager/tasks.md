@@ -206,3 +206,18 @@
 ## Phase 9: Convergence
 
 - [X] T055 Integrate The Graph Protocol decentralized subgraphs / Token API queries for multi-chain ERC-20 token balance discovery with fallback to Blockscout/RPC per Constitution I, T015, and plan: indexer.py (partial)
+
+---
+
+## Phase 10: CoinGecko Pricing & Zero-Valuation Asset Handling (Feature Clarification 2026-09-09)
+
+**Goal**: Accurately fetch crypto prices from CoinGecko API using batched queries and optional API key; mark unpriced/unlisted assets as $0.00 unit price and $0.00 total value (eliminating flat $1.00 fallbacks); exclude zero-valued assets from portfolio risk weightings to prevent zero-division errors.
+
+**Independent Test**: Sync wallet containing both ranked and unlisted/testnet tokens; verify that ranked tokens display CoinGecko market prices, unlisted tokens display $0.00 valuation with `unpriced_zero` badge, and portfolio risk metrics (Net Greeks, Covariance, Sharpe) calculate cleanly without division-by-zero errors.
+
+- [X] T056 [US1] Add `COINGECKO_API_KEY` configuration and API tier routing in `backend/src/core/config.py`
+- [X] T057 [US1] Implement batched CoinGecko price resolution, multi-minute caching, and strict $0.00 unlisted fallback (replacing residual $1.00 assumptions) in `backend/src/services/oracles.py`
+- [X] T058 [US1] Ensure discovery indexer and portfolio aggregator assign $0.00 valuation to unlisted tokens in `backend/src/services/indexer.py` and `backend/src/services/portfolio_aggregator.py`
+- [X] T059 [P] [US1] Update holdings table to render $0.00 unit prices and total values with an unpriced badge in `frontend/src/components/dashboard/HoldingsTable.tsx`
+- [X] T060 [US4] Filter out positions with total_value_usd <= 0 from portfolio weights, Beta, Net Greeks, Sharpe, Treynor, and Covariance matrix in `backend/src/math/portfolio_risk.py`
+- [X] T061 [P] Implement unit and integration tests verifying CoinGecko pricing, $0.00 fallback, and zero-weight risk engine safety in `backend/tests/unit/test_oracles.py` and `backend/tests/integration/test_portfolio_sync.py`

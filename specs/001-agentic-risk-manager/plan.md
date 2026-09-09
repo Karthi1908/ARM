@@ -38,6 +38,7 @@ Build an institutional-grade, non-custodial crypto portfolio risk manager using 
 - **Strict Non-Custodial Integrity**: Zero private key storage or transmission.
 - **Consent-Gated Execution**: 1inch and Uniswap integrations are read-only for quote generation; transactions MUST be approved and signed interactively in the user's wallet.
 - **Grounded AI Copilot**: The Gemini Copilot cannot sign transactions or call execution endpoints; all responses are grounded in tool outputs.
+- **Pricing & Zero-Valuation Guardrail**: Crypto holdings are priced via CoinGecko API (supporting optional `COINGECKO_API_KEY` with batched lookups). Any token missing or unlisted defaults to $0.00 unit price and $0.00 total value with provenance `unpriced_zero`; such assets are strictly excluded from weighted portfolio risk calculations (Beta, Greeks, Covariance, Sharpe) to eliminate zero-division distortions.
 
 **Scale/Scope**: EVM chains (Ethereum, Arbitrum, Optimism, Base, Polygon); 3 asset classes (Spot Crypto, Tokenized RWAs, Perpetuals).
 
@@ -50,7 +51,7 @@ Build an institutional-grade, non-custodial crypto portfolio risk manager using 
 | **I. Non-Custodial by Default** | System never holds private keys; uses Privy, World ID, and public indexers | **PASS** | Keys remain strictly in user wallets / MPC; The Graph queries read-only data. |
 | **II. Read-First, Consent-Only** | Rebalancing suggestions require explicit interactive wallet signature | **PASS** | 1inch / Uniswap used strictly for quotes; execution requires interactive client signing. |
 | **III. Deterministic Risk Math** | Single-deal and portfolio formulas are versioned, unit-tested, with $R_f=0$ and BTC benchmark | **PASS** | Built in Python with `numpy`/`scipy` with exact formulas codified in tests. |
-| **IV. Data Provenance & Degradation**| Source timestamps tracked for Chainlink and CEX/DEX feeds; graceful degradation | **PASS** | Oracle feeds maintain staleness checks; fallback attached with provenance flags. |
+| **IV. Data Provenance & Degradation**| Source timestamps tracked for CoinGecko, Chainlink, and CEX/DEX feeds; graceful degradation | **PASS** | Oracle feeds maintain staleness checks; unlisted assets fallback to $0.00 with explicit `unpriced_zero` provenance tags. |
 | **V. Pluggable Adapters (EVM)** | Core domain model decoupled from blockchain; EVM execution scope | **PASS** | Python domain models are agnostic; adapter modules handle chain-specific RPCs and APIs. |
 | **VI. Observability & Auditability** | Reports expose intermediate covariance calculations and explainable rebalance steps | **PASS** | Full matrix snapshots and rebalancing risk deltas stored in `risk_reports`. |
 | **VII. Progressive Disclosure UX** | Executive health and net Greeks upfront; drill-down to blotter and covariance matrix | **PASS** | Designed into Next.js dashboard hierarchy. |
@@ -96,7 +97,7 @@ agentic_risk_manager/
 │   │   │   └── tail_risk.py          # Parametric & Historical VaR, Expected Shortfall (CVaR)
 │   │   ├── services/                 # External service adapters
 │   │   │   ├── indexer.py            # The Graph Token API & 1inch fallback
-│   │   │   ├── oracles.py            # Chainlink Data Feeds & Proof of Reserve / NAVLink
+│   │   │   ├── oracles.py            # CoinGecko API Pricing Oracle (batched/cached), Chainlink & PoR/NAVLink
 │   │   │   ├── swaps.py              # 1inch Fusion & Uniswap quote clients
 │   │   │   └── gemini.py             # Google GenAI grounded copilot client
 │   │   ├── models/                   # Pydantic & SQLAlchemy / asyncpg schemas

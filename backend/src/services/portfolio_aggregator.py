@@ -46,7 +46,7 @@ class PortfolioAggregator:
                 continue
 
             price, _, _ = await oracle_service.get_price(asset_key)
-            total_val = abs(net_qty) * price
+            total_val = (abs(net_qty) * price) if price > 0 else 0.0
 
             # Ensure Asset exists
             asset_stmt = select(Asset).where(Asset.id == asset_key)

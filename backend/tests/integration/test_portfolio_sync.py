@@ -14,7 +14,7 @@ async def test_indexer_holdings_discovery():
         assert h["total_value_usd"] >= 0
         assert h["price_source"] in [
             "chainlink", "defillama_fallback", "default_estimate",
-            "blockscout_dex", "the_graph", "coingecko", "unranked_zero"
+            "blockscout_dex", "the_graph", "coingecko", "unranked_zero", "unpriced_zero"
         ]
 
 @pytest.mark.asyncio

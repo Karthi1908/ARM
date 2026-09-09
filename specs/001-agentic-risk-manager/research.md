@@ -66,14 +66,15 @@ A decoupled monorepo containing:
 ## 5. Market Pricing, Oracles & Tokenized RWA Proof of Reserve
 
 ### Decision
-- **Primary Pricing**: Chainlink Data Feeds (ETH/USD, BTC/USD, and top EVM token feeds).
-- **Fallback Pricing**: DefiLlama / CoinGecko REST APIs for long-tail crypto assets not yet tracked by Chainlink oracles.
-- **Tokenized RWAs**: Chainlink Proof of Reserve (PoR) and NAVLink feeds to fetch verified off-chain collateral and Net Asset Value (NAV) valuations.
+- **Primary Market Pricing**: CoinGecko API (supporting both unauthenticated public queries and authenticated access via an optional `COINGECKO_API_KEY` for Demo/Pro tiers). Batch price queries (`/simple/price`) and top-tier market rankings are cached in memory/Redis (TTL: 60–300s).
+- **Unpriced / Unlisted Token Policy**: If a token is not listed or pricing is unavailable on CoinGecko, its unit price is marked as `$0.00` and total asset value is marked as `$0.00` with provenance flag `unpriced_zero`.
+- **Zero-Valuation Risk Exclusion**: Assets with `$0.00` valuation remain visible in the blotter for inventory auditability, but are strictly excluded from portfolio-level weighted risk metrics (Beta vs. BTC, Net Greeks, Covariance matrix, Sharpe, and Treynor) to eliminate zero-division numerical instability.
+- **Tokenized RWAs**: Institutional Proof of Reserve (PoR) and NAVLink feeds to fetch verified off-chain collateral and Net Asset Value (NAV) valuations.
 
 ### Rationale
-- **Data Provenance**: Fulfills Constitution Principle IV. Chainlink oracles provide on-chain cryptographic guarantees of price integrity and timestamps.
-- **RWA Transparency**: For tokenized treasuries and credit (e.g., Ondo, Matrixdock, Mountain Protocol), Chainlink PoR verifies that on-chain tokens are 1:1 backed by custodial reserves.
-- **Graceful Degradation**: Fallback providers are triggered when an oracle answer is stale ($>3600s$) or unavailable, attaching a `provenance: "fallback"` warning to the valuation.
+- **Data Provenance & Accuracy**: Fulfills Constitution Principle IV. Avoids synthetic flat $1.00 estimates for unknown or unpriced tokens; unverified assets must reflect $0.00 until authenticated market pricing is available.
+- **API Rate-Limit Resilience**: Batching token queries and providing an optional `COINGECKO_API_KEY` prevents HTTP 429 rate limit errors while ensuring responsive updates.
+- **Graceful Degradation**: If CoinGecko temporarily fails or rate limits, the system falls back to cached prices or marks unpriced assets as `$0.00` with explicit staleness and provenance tags.
 
 ---
 

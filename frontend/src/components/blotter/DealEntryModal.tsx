@@ -6,11 +6,12 @@ import { X, PlusCircle, Check, AlertCircle } from "lucide-react";
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onDealCreated: () => void;
+  onDealCreated?: () => void;
+  onSuccess?: () => void;
   walletAddress: string;
 }
 
-export function DealEntryModal({ isOpen, onClose, onDealCreated, walletAddress }: Props) {
+export function DealEntryModal({ isOpen, onClose, onDealCreated, onSuccess, walletAddress }: Props) {
   const [assetName, setAssetName] = useState("");
   const [tradeDate, setTradeDate] = useState(new Date().toISOString().split("T")[0]);
   const [side, setSide] = useState<"buy" | "sell">("buy");
@@ -68,7 +69,7 @@ export function DealEntryModal({ isOpen, onClose, onDealCreated, walletAddress }
         throw new Error(errData.detail || "Failed to record deal.");
       }
 
-      onDealCreated();
+      (onDealCreated || onSuccess)?.();
       onClose();
       // Reset
       setAssetName("");

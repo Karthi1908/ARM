@@ -15,7 +15,13 @@ async def compute_portfolio_risk_profile(
     Aggregates whole-portfolio Net Delta, Net Vega, Net Gamma,
     computes NxN covariance matrix, and calculates portfolio-wide Sharpe & Treynor ratios.
     """
-    if not positions_data:
+    # Filter out unpriced or zero-value positions from risk weighting and covariance matrix
+    priced_positions = [
+        p for p in positions_data
+        if float(p.get("total_value_usd") or 0.0) > 0.0 and float(p.get("unit_price_usd") or 0.0) > 0.0
+    ]
+
+    if not priced_positions:
         return {
             "net_delta": 0.0,
             "net_gamma": 0.0,
@@ -24,10 +30,12 @@ async def compute_portfolio_risk_profile(
             "treynor_ratio": 0.0,
             "assets": [],
             "covariance_matrix": [],
-            "correlation_matrix": []
+            "correlation_matrix": [],
+            "portfolio_volatility": 0.0,
+            "portfolio_return": 0.0
         }
 
-    total_portfolio_value = sum([max(float(p["total_value_usd"]), 0.0) for p in positions_data])
+    total_portfolio_value = sum([float(p["total_value_usd"]) for p in priced_positions])
     if total_portfolio_value <= 0:
         total_portfolio_value = 1.0
 
@@ -44,7 +52,7 @@ async def compute_portfolio_risk_profile(
     btc_price, _, _ = await oracle_service.get_price("BTC")
     _, btc_ret = generate_historical_prices_and_returns("BTC", btc_price, days=lookback_days)
 
-    for p in positions_data:
+    for p in priced_positions:
         sym = p["symbol"].upper()
         symbols.append(sym)
         weight = float(p["total_value_usd"]) / total_portfolio_value

@@ -37,9 +37,15 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, [authenticated]);
 
-  // Determine active address: connected Privy wallet takes priority
-  const activeAddress = authenticated && user?.wallet?.address
-    ? user.wallet.address
+  // Determine active address: check primary wallet, then search linkedAccounts (embedded/social wallets)
+  const linkedWallet = user?.linkedAccounts?.find(
+    (account) => account.type === "wallet" && "address" in account
+  ) as { address?: string } | undefined;
+
+  const privyAddress = user?.wallet?.address || linkedWallet?.address || null;
+
+  const activeAddress = authenticated && privyAddress
+    ? privyAddress
     : customAddress;
 
   // Resolve ENS and sync session when activeAddress changes
@@ -96,7 +102,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       value={{
         activeAddress,
         ensName,
-        isConnected: Boolean(authenticated && user?.wallet?.address),
+        isConnected: Boolean(authenticated && privyAddress),
         isSyncing,
         setActiveAddress: handleSetActiveAddress,
         syncPortfolio,

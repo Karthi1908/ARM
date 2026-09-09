@@ -8,6 +8,13 @@
 
 **Input**: User description: "Build a Agentic Risk Manager web application. Users log in by connecting a crypto wallet. Once connected, the app automatically fetches and displays all of the user's crypto holdings across multiple blockchains for that wallet, valued in USD. Users can also manually add positions the wallet won't show automatically — for example trades made on a centralized exchange, OTC deals, tokenized real-world assets, or perpetual futures. Each manual position needs: the crypto/asset name, trade date, side (buy or sell), type of trade, asset class (crypto, real-world asset, or perpetual), settlement date, and the exchange or venue where the trade happened. For any single position — whether discovered on-chain or entered manually — the app should show: beta (using Bitcoin as the reference index), delta, volatility, standard deviation, Sharpe ratio, and Treynor ratio. Assume a risk-free rate of 0. At the whole-portfolio level, the app should show: net delta, net vega, net gamma, the variance-covariance matrix of the held assets, and portfolio-level Sharpe ratio and Treynor ratio (also assuming a 0% risk-free rate). Finally, users should be able to generate a risk report that calculates Value at Risk (VaR) and Expected Shortfall, and gives suggestions for rebalancing the portfolio to reduce risk. The app should never execute a trade on the user's behalf — any suggested rebalancing action requires the user to confirm and sign it themselves in their own wallet."
 
+## Clarifications
+
+### Session 2026-09-09
+- Q: How should holdings with an unresolvable CoinGecko price ($0.00 valuation) be handled in portfolio risk calculations and the blotter UI? → A: Display the token in the holdings blotter with $0.00 unit price and $0.00 total value, and exclude it from portfolio-weighted risk analytics (Beta, Covariance, Sharpe).
+- Q: What lookup strategy should the CoinGecko pricing service use to query token prices while staying within CoinGecko's public API rate limits? → A: Support an optional COINGECKO_API_KEY (Demo/Pro) for higher rate limits with batched queries, defaulting to $0.00 when unlisted or missing.
+- Q: Why is Next.js 14.2.5 maintained instead of Next.js 15, and how should Privy Google authentication be resolved? → A: Retain Next.js 14.2.x to preserve strict React 18 peer-dependency compatibility required by `@privy-io/react-auth`, Wagmi, and Viem without build workarounds; update `WalletContext.tsx` to reliably resolve embedded wallets created for Google OAuth / social accounts across `user.wallet` and `user.linkedAccounts`, triggering embedded wallet creation if absent.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Multi-Chain Wallet Discovery & Unified Holdings (Priority: P1)
@@ -21,7 +28,7 @@ As a crypto investor holding assets across multiple networks, I want to connect 
 **Acceptance Scenarios**:
 
 1. **Given** an unauthenticated user, **When** they initiate a wallet connection and approve the session, **Then** the system establishes a non-custodial session and displays their public wallet address.
-2. **Given** a connected wallet with token holdings across multiple supported blockchains, **When** the portfolio dashboard loads, **Then** the application automatically fetches and lists each token, its chain of origin, held quantity, current market price in USD, and total USD position value.
+2. **Given** a connected wallet with token holdings across multiple supported blockchains, **When** the portfolio dashboard loads, **Then** the application automatically fetches and lists each token, its chain of origin, held quantity, current market price in USD, and total USD position value (or $0.00 with unpriced provenance if unlisted on CoinGecko).
 3. **Given** a connected wallet with no holdings on a specific supported chain, **When** discovery completes, **Then** the application displays an empty balance state for that chain without crashing or blocking other chains.
 
 ---
@@ -99,7 +106,7 @@ As a portfolio manager seeking downside protection, I want to generate a formal 
 ### Edge Cases
 
 - **RPC or Data Indexer Timeout**: If on-chain balance discovery or historical price indexing is delayed or unavailable for a specific chain or token, the system displays a graceful degradation warning with timestamped cached data rather than halting the entire dashboard.
-- **Illiquid or New Token Without Historical Data**: If an asset lacks sufficient historical price data for a 90-day covariance or beta calculation, the system flags the asset with an "Insufficient History" indicator and excludes it from the beta matrix while including its known USD spot value in the portfolio total.
+- **Illiquid, New, or Unlisted Token ($0 Valuation)**: If an asset lacks market price data on CoinGecko or cannot be resolved, its unit price and total value MUST be displayed as $0.00 with provenance marked as unpriced/unranked. The asset remains visible in the blotter for inventory tracking but is excluded from portfolio-level weighted risk calculations (Beta, Covariance, Sharpe) to prevent distortion.
 - **Single-Asset Portfolio**: If a portfolio contains only one asset, the variance-covariance matrix collapses to a single scalar variance, and the system prompts the user that portfolio diversification metrics require at least two distinct assets.
 - **Zero Beta or Zero Volatility Asset**: If an asset (such as a pegged fiat stablecoin) exhibits zero volatility or zero beta, Sharpe and Treynor ratio calculations gracefully display "N/A (Zero Volatility / Zero Beta)" rather than returning division-by-zero errors.
 - **Past Settlement Date**: If a manual RWA or forward contract settlement date is in the past, the system flags the position as "Matured / Settled" and provides options to archive or rollover.
@@ -112,7 +119,9 @@ As a portfolio manager seeking downside protection, I want to generate a formal 
 #### Authentication & Asset Discovery
 - **FR-001**: System MUST support non-custodial wallet connection using standard Web3 wallet protocols without requesting private keys or seed phrases.
 - **FR-002**: System MUST automatically query and aggregate crypto token balances across multiple supported blockchain networks for the connected wallet address.
-- **FR-003**: System MUST convert and display all discovered crypto balances in United States Dollars (USD) using current market price feeds.
+- **FR-003**: System MUST convert and display all discovered crypto balances in United States Dollars (USD) using current market price feeds fetched from the CoinGecko API. If a token's price is unavailable or unlisted on CoinGecko, the system MUST set its unit price to $0.00 and mark its total asset value as $0.00.
+- **FR-003a**: Positions with a $0.00 valuation MUST be excluded from portfolio-level weighted risk metrics (Portfolio Beta, Net Greeks, Sharpe, Treynor, and Variance-Covariance matrix) to prevent zero-division distortion.
+- **FR-003b**: System MUST support an optional `COINGECKO_API_KEY` configuration (supporting Demo and Pro API tiers) and execute batched price queries to maximize rate limit efficiency; any token not found or missing from the CoinGecko response MUST default to a unit price of $0.00 with provenance recorded as unpriced.
 - **FR-004**: System MUST display data provenance metadata, including price source and last updated timestamp, for all asset valuations.
 
 #### Multi-Asset Deal Blotter
@@ -174,5 +183,6 @@ As a portfolio manager seeking downside protection, I want to generate a formal 
 - **Historical Window**: Historical market data lookback window defaults to 90 days for return volatility, covariance, and beta estimations, with optional 180-day and 365-day views.
 - **Tail-Risk Parameters**: Value at Risk (VaR) and Expected Shortfall calculations utilize standard 1-day holding periods evaluated at both 95% and 99% confidence horizons using parametric and historical methods.
 - **Blockchain Scope**: Initial wallet discovery and rebalance execution routing target EVM-compatible networks in accordance with the project constitution hackathon scope.
+- **Pricing Oracle & API Limits**: CoinGecko is the primary market pricing oracle. The system supports both public unauthenticated queries and authenticated requests via an optional `COINGECKO_API_KEY`. Unlisted or unresolved assets default to $0.00 unit price and $0.00 total value.
 - **Data Persistence**: Manual positions entered by the user are persisted in client-side secure local storage associated with the connected wallet address, maintaining privacy and non-custodial integrity.
 - **Rebalancing Routing**: Rebalancing suggestions are routed through decentralized exchange protocols (such as Uniswap and 1inch), preparing executable transactions that require user signature in their personal wallet.

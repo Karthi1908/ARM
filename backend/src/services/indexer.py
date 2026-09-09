@@ -243,8 +243,8 @@ class MultiChainIndexer:
                             "chain_id": chain_id,
                             "quantity": 1.0,
                             "unit_price_usd": price,
-                            "total_value_usd": round(price, 2),
-                            "price_source": "the_graph",
+                            "total_value_usd": round(price, 2) if price > 0 else 0.0,
+                            "price_source": "the_graph" if price > 0 else source,
                             "timestamp": ts
                         })
         except Exception as e:

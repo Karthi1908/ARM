@@ -23,6 +23,7 @@ def generate_historical_prices_and_returns(
     """
     Returns (prices_series, log_returns).
     Uses deterministic geometric brownian motion seeded by asset hash for consistent reproducible math.
+    """
     if base_price <= 0:
         return np.zeros(days), np.zeros(days)
 

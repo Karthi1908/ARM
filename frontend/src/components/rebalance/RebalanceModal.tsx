@@ -13,9 +13,10 @@ interface Props {
     rationale: string;
     recommended_venue: string;
   } | null;
+  walletAddress?: string;
 }
 
-export function RebalanceModal({ isOpen, onClose, action }: Props) {
+export function RebalanceModal({ isOpen, onClose, action, walletAddress }: Props) {
   const [quote, setQuote] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
