@@ -57,7 +57,8 @@ async def chat_with_copilot(
     portfolio_context = {
         "total_value_usd": total_val,
         "positions_count": len(pos_data),
-        "assets": [p["symbol"] for p in pos_data]
+        "assets": [p["symbol"] for p in pos_data],
+        "positions": pos_data
     }
 
     result = await gemini_copilot.chat(

@@ -221,3 +221,21 @@
 - [X] T059 [P] [US1] Update holdings table to render $0.00 unit prices and total values with an unpriced badge in `frontend/src/components/dashboard/HoldingsTable.tsx`
 - [X] T060 [US4] Filter out positions with total_value_usd <= 0 from portfolio weights, Beta, Net Greeks, Sharpe, Treynor, and Covariance matrix in `backend/src/math/portfolio_risk.py`
 - [X] T061 [P] Implement unit and integration tests verifying CoinGecko pricing, $0.00 fallback, and zero-weight risk engine safety in `backend/tests/unit/test_oracles.py` and `backend/tests/integration/test_portfolio_sync.py`
+
+---
+
+## Phase 11: Uniswap AI Hedging Agent (Positions to USDC / ETH) (Feature Clarification 2026-09-09)
+
+**Goal**: Implement an interactive Uniswap AI Hedging Agent that queries the user for token and quantity to convert into USDC or ETH (and vice versa), retrieves optimized Uniswap quotes/routing, presents pre-flight simulation metrics in Copilot and Rebalance modals, and enables non-custodial 1-click execution requiring explicit user wallet signature.
+
+**Independent Test**: Connect wallet with crypto assets, ask Copilot to hedge positions; verify the agent prompts for token and quantity, computes the Uniswap AI route to USDC/ETH, displays the pre-flight simulation card, and opens the wallet signing modal without automated execution.
+
+- [X] T062 [US5] Implement `UniswapAIAgentService` with intent parsing (token, quantity, target USDC/ETH) and route quoting in `backend/src/services/uniswap_ai.py`
+- [X] T063 [P] [US5] Extend Pydantic schemas for Uniswap AI hedging parameters, price impact, and pool route details in `backend/src/models/schemas.py`
+- [X] T064 [US5] Update `GeminiCopilotService` to ground hedging queries, prompt for missing token/quantity, and call Uniswap routing in `backend/src/services/gemini.py`
+- [X] T065 [P] [US5] Update rebalance quote API `POST /api/v1/rebalance/quote` to route through `UniswapAIAgentService` for Uniswap venue in `backend/src/api/rebalance.py`
+- [X] T066 [US5] Update `CopilotDrawer.tsx` to render interactive hedge suggestion cards with Quick Token chips and "Review & Sign Uniswap Hedge" action in `frontend/src/components/copilot/CopilotDrawer.tsx`
+- [X] T067 [P] [US5] Update `RebalanceModal.tsx` to support target hedge assets (USDC, ETH), display Uniswap AI routing metrics, and prompt for wallet signature in `frontend/src/components/rebalance/RebalanceModal.tsx`
+- [X] T068 [P] [US5] Add quick "Hedge into USDC" trigger to holdings table rows in `frontend/src/components/dashboard/HoldingsTable.tsx`
+- [X] T069 [P] [US5] Implement automated unit tests for Uniswap AI intent parsing, missing param prompts, and quote generation in `backend/tests/unit/test_uniswap_ai.py`
+

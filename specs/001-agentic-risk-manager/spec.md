@@ -14,6 +14,7 @@
 - Q: How should holdings with an unresolvable CoinGecko price ($0.00 valuation) be handled in portfolio risk calculations and the blotter UI? → A: Display the token in the holdings blotter with $0.00 unit price and $0.00 total value, and exclude it from portfolio-weighted risk analytics (Beta, Covariance, Sharpe).
 - Q: What lookup strategy should the CoinGecko pricing service use to query token prices while staying within CoinGecko's public API rate limits? → A: Support an optional COINGECKO_API_KEY (Demo/Pro) for higher rate limits with batched queries, defaulting to $0.00 when unlisted or missing.
 - Q: Why is Next.js 14.2.5 maintained instead of Next.js 15, and how should Privy Google authentication be resolved? → A: Retain Next.js 14.2.x to preserve strict React 18 peer-dependency compatibility required by `@privy-io/react-auth`, Wagmi, and Viem without build workarounds; update `WalletContext.tsx` to reliably resolve embedded wallets created for Google OAuth / social accounts across `user.wallet` and `user.linkedAccounts`, triggering embedded wallet creation if absent.
+- Q: How should the Uniswap AI skill (https://github.com/Uniswap/uniswap-ai) be integrated to hedge or close positions into USDC and vice versa? → A: An interactive Hedging Agent uses the Uniswap AI routing/skill to determine optimal swap routes between held tokens and USDC. While preserving strict non-custodial Principle II, the agent generates pre-flight swap simulations (expected slippage, route, gas) and presents an unsigned transaction payload for the user's explicit 1-click wallet confirmation and signing.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -99,7 +100,8 @@ As a portfolio manager seeking downside protection, I want to generate a formal 
 1. **Given** an active portfolio, **When** the user clicks "Generate Risk Report", **Then** the application generates a report containing Value at Risk (VaR) and Expected Shortfall (Conditional VaR / ES) at 95% and 99% confidence intervals.
 2. **Given** a portfolio with concentrated risk or high negative tail exposure, **When** the risk report is generated, **Then** the system provides actionable rebalancing suggestions (e.g., trim high-volatility assets, hedge net delta, reallocate to lower-beta assets).
 3. **Given** suggested rebalancing actions, **When** the user chooses to proceed with a rebalancing recommendation, **Then** the system presents a detailed pre-flight simulation (assets involved, expected risk reduction, slippage/fees) and requires the user to confirm and sign the transaction in their connected wallet.
-4. **Given** a rebalancing proposal, **When** the user dismisses the suggestion or rejects the wallet prompt, **Then** no transaction is broadcast and portfolio state remains unchanged.
+4. **Given** a high-risk or volatile position, **When** the user engages the Uniswap AI Hedging Agent, **Then** the agent calculates optimal routing to convert the position into USDC (or vice versa from USDC into the hedge asset) via Uniswap, generating an unsigned transaction payload for explicit 1-click user signature.
+5. **Given** a rebalancing proposal, **When** the user dismisses the suggestion or rejects the wallet prompt, **Then** no transaction is broadcast and portfolio state remains unchanged.
 
 ---
 
@@ -152,6 +154,7 @@ As a portfolio manager seeking downside protection, I want to generate a formal 
 - **FR-023**: System MUST explain the rationale behind each rebalancing suggestion, detailing the expected change in portfolio VaR, Net Greeks, and risk ratios.
 - **FR-024**: System MUST NEVER autonomously execute trades, transactions, or balance shifts on behalf of the user.
 - **FR-025**: Any rebalancing execution MUST require the user to review a pre-flight summary and interactively approve and sign the transaction in their connected wallet.
+- **FR-026**: System MUST integrate a Uniswap AI Hedging Agent capable of routing and quoting swaps between portfolio assets and USDC (and vice versa) using the Uniswap AI skill framework, delivering un-signed swap execution payloads for interactive user confirmation.
 
 ### Key Entities *(include if feature involves data)*
 

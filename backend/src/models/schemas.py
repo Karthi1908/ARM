@@ -134,6 +134,9 @@ class RebalanceQuoteResponse(BaseModel):
     estimated_slippage_bps: int
     gas_estimate_usd: float
     unsigned_tx: Dict[str, Any]
+    route_summary: Optional[str] = None
+    pool_fee_tier_bps: Optional[int] = None
+    usd_value: Optional[float] = None
 
 
 # --- Gemini Copilot Schemas ---

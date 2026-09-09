@@ -20,9 +20,10 @@ interface Props {
   positions: PositionItem[];
   onSelectPosition: (pos: PositionItem) => void;
   selectedAssetId?: string | null;
+  onHedgePosition?: (pos: PositionItem) => void;
 }
 
-export function HoldingsTable({ positions, onSelectPosition, selectedAssetId }: Props) {
+export function HoldingsTable({ positions, onSelectPosition, selectedAssetId, onHedgePosition }: Props) {
   const getChainName = (chainId?: number | null) => {
     switch (chainId) {
       case 1: return "Ethereum";
@@ -158,9 +159,31 @@ export function HoldingsTable({ positions, onSelectPosition, selectedAssetId }: 
                       )}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                      <button className="btn btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem" }}>
-                        Inspect <ChevronRight size={12} />
-                      </button>
+                      <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectPosition(pos);
+                          }}
+                          className="btn btn-secondary"
+                          style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+                        >
+                          Inspect <ChevronRight size={12} />
+                        </button>
+                        {onHedgePosition && pos.symbol.toUpperCase() !== "USDC" && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onHedgePosition(pos);
+                            }}
+                            className="btn btn-primary"
+                            style={{ padding: "4px 8px", fontSize: "0.75rem", background: "rgba(99, 102, 241, 0.2)", border: "1px solid rgba(99, 102, 241, 0.4)" }}
+                            title="Hedge or convert into USDC via Uniswap AI"
+                          >
+                            Hedge
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

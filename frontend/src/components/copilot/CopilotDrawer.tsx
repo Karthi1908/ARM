@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { X, Send, Bot, User, Sparkles, Cpu, ArrowRight } from "lucide-react";
+import { RebalanceModal } from "@/components/rebalance/RebalanceModal";
 
 interface Props {
   isOpen: boolean;
@@ -20,11 +21,13 @@ export function CopilotDrawer({ isOpen, onClose, walletAddress }: Props) {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "copilot",
-      text: "Hello! I am your **Agentic Risk Copilot**, powered by Gemini. Ask me to explain your portfolio Greek sensitivities, analyze Value at Risk (VaR), or propose a mathematically balanced trade route.",
+      text: "Hello! I am your **Agentic Risk Copilot**, powered by Uniswap AI skills. Ask me to hedge or close positions into **USDC** or **ETH**, analyze Value at Risk (VaR), or explain Greek exposures.",
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedRebalanceAction, setSelectedRebalanceAction] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -73,9 +76,10 @@ export function CopilotDrawer({ isOpen, onClose, walletAddress }: Props) {
   };
 
   const quickPrompts = [
+    "Hedge my position into USDC",
+    "Convert 50% of my ETH to USDC",
     "Explain why my portfolio VaR is high",
     "Suggest a rebalance to hedge Delta",
-    "What is my Beta relative to Bitcoin?",
   ];
 
   return (
@@ -195,6 +199,50 @@ export function CopilotDrawer({ isOpen, onClose, walletAddress }: Props) {
                     ))}
                   </div>
                 )}
+
+                {/* Interactive Uniswap AI Hedge / Rebalance Card */}
+                {m.rebalanceProposal && (
+                  <div style={{
+                    marginTop: "10px",
+                    padding: "12px",
+                    background: "rgba(99, 102, 241, 0.12)",
+                    border: "1px solid rgba(99, 102, 241, 0.3)",
+                    borderRadius: "var(--radius-sm)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px"
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span className="badge badge-positive" style={{ fontSize: "0.7rem" }}>
+                        {m.rebalanceProposal.recommended_venue === "uniswap" ? "Uniswap AI Route Ready" : "Rebalance Route"}
+                      </span>
+                      <span className="mono-num" style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                        {m.rebalanceProposal.source_token} $\rightarrow$ {m.rebalanceProposal.target_token}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "var(--text-primary)" }}>
+                      Convert <strong>{m.rebalanceProposal.amount} {m.rebalanceProposal.source_token}</strong> into <strong>{m.rebalanceProposal.target_token}</strong>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedRebalanceAction({
+                          action_type: m.rebalanceProposal.action,
+                          from_token: m.rebalanceProposal.source_token,
+                          to_token: m.rebalanceProposal.target_token,
+                          amount: m.rebalanceProposal.amount,
+                          recommended_venue: m.rebalanceProposal.recommended_venue || "uniswap",
+                          route_summary: m.rebalanceProposal.route_summary,
+                          usd_value: m.rebalanceProposal.usd_value
+                        });
+                        setIsModalOpen(true);
+                      }}
+                      className="btn btn-primary"
+                      style={{ padding: "8px 12px", fontSize: "0.8rem", gap: "6px", width: "100%", justifyContent: "center" }}
+                    >
+                      <ArrowRight size={14} /> Review & Sign Uniswap Hedge
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -225,6 +273,19 @@ export function CopilotDrawer({ isOpen, onClose, walletAddress }: Props) {
           </button>
         </form>
       </div>
+
+      {/* Rebalance & Hedge Pre-Flight Modal */}
+      {selectedRebalanceAction && (
+        <RebalanceModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedRebalanceAction(null);
+          }}
+          action={selectedRebalanceAction}
+          walletAddress={walletAddress}
+        />
+      )}
     </div>
   );
 }

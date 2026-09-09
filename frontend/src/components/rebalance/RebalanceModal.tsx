@@ -8,10 +8,15 @@ interface Props {
   onClose: () => void;
   action: {
     action_type: string;
-    asset_id: string;
-    target_delta_usd: number;
-    rationale: string;
-    recommended_venue: string;
+    asset_id?: string;
+    from_token?: string;
+    to_token?: string;
+    amount?: string;
+    usd_value?: number;
+    target_delta_usd?: number;
+    rationale?: string;
+    recommended_venue?: string;
+    route_summary?: string;
   } | null;
   walletAddress?: string;
 }
@@ -26,15 +31,20 @@ export function RebalanceModal({ isOpen, onClose, action, walletAddress }: Props
     if (isOpen && action) {
       setLoading(true);
       setExecutedTxHash(null);
+
+      const fromToken = action.from_token || (action.action_type === "trim" ? action.asset_id : "USDC") || "ETH";
+      const toToken = action.to_token || (action.action_type === "trim" ? "USDC" : action.asset_id) || "USDC";
+      const amountStr = action.amount || (action.target_delta_usd ? Math.abs(action.target_delta_usd / 3550).toFixed(4) : "1.0");
+
       fetch("http://localhost:8000/api/v1/rebalance/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chain_id: 1,
-          from_token: action.action_type === "trim" ? action.asset_id : "USDC",
-          to_token: action.action_type === "trim" ? "ONDO_USDY" : action.asset_id,
-          amount: Math.abs(action.target_delta_usd / 3550).toFixed(4), // Approximate token amount
-          venue: action.recommended_venue || "1inch",
+          from_token: fromToken,
+          to_token: toToken,
+          amount: amountStr,
+          venue: action.recommended_venue || "uniswap",
         }),
       })
         .then((res) => res.json())
@@ -73,11 +83,18 @@ export function RebalanceModal({ isOpen, onClose, action, walletAddress }: Props
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
               <span className="badge badge-positive">Pre-Flight Simulation</span>
-              <span className="badge badge-neutral">{action.recommended_venue.toUpperCase()} Fusion</span>
+              <span className="badge badge-neutral">
+                {action.recommended_venue === "uniswap" ? "Uniswap AI Skill Router" : `${(action.recommended_venue || "1inch").toUpperCase()} Fusion`}
+              </span>
             </div>
             <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", fontWeight: 700 }}>
               Confirm Rebalancing Route
             </h3>
+            {(quote?.route_summary || action.route_summary) && (
+              <div style={{ fontSize: "0.75rem", color: "var(--accent-secondary)", marginTop: "2px" }}>
+                Route: {quote?.route_summary || action.route_summary}
+              </div>
+            )}
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>
             <X size={20} />

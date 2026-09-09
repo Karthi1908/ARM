@@ -7,6 +7,7 @@ import { HoldingsTable, PositionItem } from "@/components/dashboard/HoldingsTabl
 import { SingleRiskDrawer } from "@/components/risk/SingleRiskDrawer";
 import { NetGreeksCards } from "@/components/dashboard/NetGreeksCards";
 import { CopilotDrawer } from "@/components/copilot/CopilotDrawer";
+import { RebalanceModal } from "@/components/rebalance/RebalanceModal";
 import { TrendingUp, ShieldAlert, ArrowRight, MessageSquareCode, Wallet, Search, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
@@ -20,6 +21,7 @@ export default function DashboardPage() {
   });
   const [selectedPosition, setSelectedPosition] = useState<PositionItem | null>(null);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [selectedHedgeAction, setSelectedHedgeAction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [manualInput, setManualInput] = useState("");
 
@@ -175,6 +177,16 @@ export default function DashboardPage() {
             positions={portfolio.positions}
             onSelectPosition={(pos) => setSelectedPosition(pos)}
             selectedAssetId={selectedPosition?.asset_id}
+            onHedgePosition={(pos) => {
+              setSelectedHedgeAction({
+                action_type: "hedge_to_usdc",
+                from_token: pos.symbol,
+                to_token: "USDC",
+                amount: String(pos.quantity),
+                recommended_venue: "uniswap",
+                usd_value: pos.total_value_usd,
+              });
+            }}
           />
         </>
       )}
@@ -194,6 +206,16 @@ export default function DashboardPage() {
           isOpen={isCopilotOpen}
           onClose={() => setIsCopilotOpen(false)}
           walletAddress={activeAddress}
+        />
+      )}
+
+      {/* Quick Holdings Row Hedge Modal */}
+      {selectedHedgeAction && (
+        <RebalanceModal
+          isOpen={Boolean(selectedHedgeAction)}
+          onClose={() => setSelectedHedgeAction(null)}
+          action={selectedHedgeAction}
+          walletAddress={activeAddress || undefined}
         />
       )}
     </div>
