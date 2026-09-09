@@ -91,34 +91,36 @@ class MultiChainIndexer:
 
         async with httpx.AsyncClient(timeout=7.0, headers={"User-Agent": "AgenticRiskManager/1.0"}) as client:
             # 1. Fetch Native Balance via RPC
-            native_qty = await self._query_native_balance(client, meta["rpcs"], wallet_address)
-            if native_qty > 0.0001:
-                native_symbol = meta["native_symbol"]
-                price, source, ts = await oracle_service.get_price(native_symbol)
-                total_val = native_qty * price
-                holdings.append({
-                    "asset_id": f"{native_symbol}_{chain_id}",
-                    "symbol": native_symbol,
-                    "name": meta["native_name"],
-                    "asset_class": "crypto",
-                    "source_type": "on_chain_discovered",
-                    "chain_id": chain_id,
-                    "quantity": round(native_qty, 6),
-                    "unit_price_usd": price,
-                    "total_value_usd": round(total_val, 2),
-                    "price_source": source,
-                    "timestamp": ts
-                })
-                discovered_symbols.add(native_symbol)
+            if settings.ENABLE_RPC_DISCOVERY and meta.get("rpcs"):
+                native_qty = await self._query_native_balance(client, meta["rpcs"], wallet_address)
+                if native_qty > 0.0001:
+                    native_symbol = meta["native_symbol"]
+                    price, source, ts = await oracle_service.get_price(native_symbol)
+                    total_val = native_qty * price
+                    holdings.append({
+                        "asset_id": f"{native_symbol}_{chain_id}",
+                        "symbol": native_symbol,
+                        "name": meta["native_name"],
+                        "asset_class": "crypto",
+                        "source_type": "on_chain_discovered",
+                        "chain_id": chain_id,
+                        "quantity": round(native_qty, 6),
+                        "unit_price_usd": price,
+                        "total_value_usd": round(total_val, 2),
+                        "price_source": source,
+                        "timestamp": ts
+                    })
+                    discovered_symbols.add(native_symbol)
 
             # 2. Query The Graph Protocol Subgraphs & Token Gateway
-            graph_holdings = await self._query_the_graph_holdings(client, chain_id, wallet_address)
-            for gh in graph_holdings:
-                holdings.append(gh)
-                discovered_symbols.add(gh["symbol"])
+            if settings.ENABLE_THE_GRAPH:
+                graph_holdings = await self._query_the_graph_holdings(client, chain_id, wallet_address)
+                for gh in graph_holdings:
+                    holdings.append(gh)
+                    discovered_symbols.add(gh["symbol"])
 
             # 3. Fetch ERC-20 Token Balances via Explorer API (Fallback & General ERC-20s)
-            if meta.get("blockscout_api"):
+            if settings.ENABLE_BLOCKSCOUT_DISCOVERY and meta.get("blockscout_api"):
                 try:
                     tokens_url = f"{meta['blockscout_api']}/addresses/{wallet_address}/tokens"
                     resp = await client.get(tokens_url)
@@ -149,18 +151,12 @@ class MultiChainIndexer:
                             if qty <= 0.000001:
                                 continue
 
-                            # Resolve USD price
-                            exchange_rate = tok.get("exchange_rate")
-                            if exchange_rate and float(exchange_rate) > 0:
-                                price = float(exchange_rate)
-                                source = "blockscout_dex"
-                                ts = 0.0
-                            else:
-                                price, source, ts = await oracle_service.get_price(symbol_clean)
-
+                            # Resolve USD price via CoinGecko Top 200 Oracle
+                            price, source, ts = await oracle_service.get_price(symbol_clean)
                             total_val = qty * price
-                            # Filter out microscopic dust / spam airdrops with zero economic value
-                            if total_val < 0.10:
+
+                            # Filter out microscopic dust if price is positive, but preserve unranked tokens marked as 0
+                            if price > 0 and total_val < 0.01:
                                 continue
 
                             contract_addr = tok.get("address") or tok.get("address_hash") or ""

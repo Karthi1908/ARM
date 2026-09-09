@@ -11,8 +11,11 @@ async def test_indexer_holdings_discovery():
     symbols = [h["symbol"] for h in holdings]
     assert "ETH" in symbols
     for h in holdings:
-        assert h["total_value_usd"] > 0
-        assert h["price_source"] in ["chainlink", "defillama_fallback", "default_estimate", "blockscout_dex", "the_graph"]
+        assert h["total_value_usd"] >= 0
+        assert h["price_source"] in [
+            "chainlink", "defillama_fallback", "default_estimate",
+            "blockscout_dex", "the_graph", "coingecko", "unranked_zero"
+        ]
 
 @pytest.mark.asyncio
 async def test_swap_quote_non_custodial():

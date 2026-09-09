@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     ONEINCH_API_KEY: str = os.getenv("ONEINCH_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     
+    # Discovery Indexer Feature Toggles
+    ENABLE_THE_GRAPH: bool = os.getenv("ENABLE_THE_GRAPH", "true").lower() in ("true", "1", "yes")
+    ENABLE_RPC_DISCOVERY: bool = os.getenv("ENABLE_RPC_DISCOVERY", "true").lower() in ("true", "1", "yes")
+    ENABLE_BLOCKSCOUT_DISCOVERY: bool = os.getenv("ENABLE_BLOCKSCOUT_DISCOVERY", "true").lower() in ("true", "1", "yes")
+    
     # Quantitative Risk Baseline Defaults
     REFERENCE_BENCHMARK: str = "BTC"
     RISK_FREE_RATE: float = 0.00
