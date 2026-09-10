@@ -170,6 +170,14 @@ class PriceOracleService:
         - If the token is NOT found or unlisted on CoinGecko, strictly returns price 0.0 with source 'unpriced_zero'.
         """
         symbol_clean = symbol.upper().replace("$", "").strip()
+        # Unpack internal compound asset IDs (e.g. "ETH_1", "ETH_MANUAL", "USDC_1_0xA0b8...")
+        if symbol_clean.endswith("_MANUAL"):
+            symbol_clean = symbol_clean.replace("_MANUAL", "")
+        elif "_" in symbol_clean and not symbol_clean.startswith(("TBILL_", "ONDO_")):
+            parts = symbol_clean.split("_")
+            if len(parts) > 1 and (parts[1].isdigit() or parts[1].startswith("0X")):
+                symbol_clean = parts[0]
+
         ts = time.time()
 
         # Special institutional RWA benchmark check

@@ -29,22 +29,31 @@ router = APIRouter()
 
 @router.post("/single", response_model=SingleRiskResponse)
 async def get_single_risk_metrics(payload: SingleRiskRequest):
-    asset_id = payload.asset_id.upper()
+    raw_asset_id = payload.asset_id.upper()
     days = max(payload.lookback_days, settings.MIN_OBSERVATIONS_THRESHOLD)
 
-    price, _, _ = await oracle_service.get_price(asset_id)
+    # Normalize compound IDs (e.g. ETH_1, ETH_MANUAL, USDC_1_0x...)
+    symbol = raw_asset_id
+    if symbol.endswith("_MANUAL"):
+        symbol = symbol.replace("_MANUAL", "")
+    elif "_" in symbol and not symbol.startswith(("TBILL_", "ONDO_")):
+        parts = symbol.split("_")
+        if len(parts) > 1 and (parts[1].isdigit() or parts[1].startswith("0X")):
+            symbol = parts[0]
+
+    price, _, _ = await oracle_service.get_price(symbol)
     btc_price, _, _ = await oracle_service.get_price("BTC")
 
-    _, asset_returns = generate_historical_prices_and_returns(asset_id, price, days=days)
+    _, asset_returns = generate_historical_prices_and_returns(symbol, price, days=days)
     _, btc_returns = generate_historical_prices_and_returns("BTC", btc_price, days=days)
 
-    beta = calculate_beta(asset_returns, btc_returns) if asset_id != "BTC" else 1.0000
+    beta = calculate_beta(asset_returns, btc_returns) if symbol != "BTC" else 1.0000
     delta = calculate_delta(side="buy", trade_type="spot")
     annualized_vol, daily_std = calculate_volatility_and_std(asset_returns)
     sharpe, treynor = calculate_sharpe_and_treynor(asset_returns, beta, risk_free_rate=settings.RISK_FREE_RATE)
 
     return SingleRiskResponse(
-        asset_id=asset_id,
+        asset_id=raw_asset_id,
         reference_index=settings.REFERENCE_BENCHMARK,
         beta=beta,
         delta=delta,

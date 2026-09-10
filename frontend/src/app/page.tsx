@@ -194,7 +194,7 @@ export default function DashboardPage() {
       {/* Single-Deal Risk Analytics Drawer */}
       {selectedPosition && (
         <SingleRiskDrawer
-          assetId={selectedPosition.asset_id}
+          assetId={selectedPosition.symbol || selectedPosition.asset_id}
           assetName={selectedPosition.name}
           onClose={() => setSelectedPosition(null)}
         />
