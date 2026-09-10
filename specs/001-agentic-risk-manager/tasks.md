@@ -239,3 +239,16 @@
 - [X] T068 [P] [US5] Add quick "Hedge into USDC" trigger to holdings table rows in `frontend/src/components/dashboard/HoldingsTable.tsx`
 - [X] T069 [P] [US5] Implement automated unit tests for Uniswap AI intent parsing, missing param prompts, and quote generation in `backend/tests/unit/test_uniswap_ai.py`
 
+---
+
+## Phase 12: Inline Risk Metrics & Blotter Portfolio Risk Aggregation (Feature Clarification 2026-09-09)
+
+**Goal**: Render asset Beta (vs. BTC), Sharpe Ratio ($R_f=0$), and Treynor Ratio directly inline within table rows in `HoldingsTable.tsx` and `BlotterTable.tsx`. Include manual blotter deals in portfolio risk aggregation and risk report calculations in `backend/src/api/risk.py`, eliminating blank or missing ratios.
+
+**Independent Test**: View Holdings and Blotter tables; verify that each row displays calculated Beta, Sharpe, and Treynor ratios with colored badges. Verify that users with manual deals see calculated Net Greeks, Sharpe, and Treynor on the portfolio dashboard.
+
+- [X] T070 [US3] Add inline columns for Beta (vs BTC), Sharpe Ratio ($R_f=0$), and Treynor Ratio with color-coded contextual badges in `frontend/src/components/dashboard/HoldingsTable.tsx`
+- [X] T071 [US2] Add inline columns and async risk resolution for manual deals in `frontend/src/components/blotter/BlotterTable.tsx`
+- [X] T072 [US4] Aggregate `ManualDeal` records alongside `Position` records and add error resilience in `backend/src/api/risk.py`
+
+

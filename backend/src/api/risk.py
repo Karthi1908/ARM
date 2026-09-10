@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from backend.src.core.database import get_db
 from backend.src.core.config import settings
-from backend.src.models.entities import Position, Asset, RiskReport
+from backend.src.models.entities import Position, Asset, RiskReport, ManualDeal
 from backend.src.models.schemas import (
     SingleRiskRequest, SingleRiskResponse,
     PortfolioRiskRequest, PortfolioRiskResponse,
@@ -66,9 +66,17 @@ async def get_portfolio_risk_metrics(
     result = await db.execute(stmt)
     positions = result.scalars().all()
 
+    deals_stmt = select(ManualDeal).where(ManualDeal.wallet_address == addr_lower)
+    deals_res = await db.execute(deals_stmt)
+    manual_deals = deals_res.scalars().all()
+
     pos_data = []
-    if not positions:
-        pos_data = await indexer_service.fetch_onchain_holdings(addr_lower)
+    if not positions and not manual_deals:
+        try:
+            pos_data = await indexer_service.fetch_onchain_holdings(addr_lower)
+        except Exception as e:
+            logger.warning(f"Failed to fetch onchain holdings in risk/portfolio: {e}")
+            pos_data = []
     else:
         for p in positions:
             asset_stmt = select(Asset).where(Asset.id == p.asset_id)
@@ -82,6 +90,19 @@ async def get_portfolio_risk_metrics(
                 "unit_price_usd": float(p.unit_price_usd),
                 "total_value_usd": float(p.total_value_usd),
                 "trade_type": "spot"
+            })
+
+        for deal in manual_deals:
+            price, _, _ = await oracle_service.get_price(deal.asset_name)
+            qty = float(deal.quantity) if deal.side == "buy" else -float(deal.quantity)
+            val = abs(qty) * price
+            pos_data.append({
+                "symbol": deal.asset_name.upper(),
+                "asset_class": deal.asset_class or "crypto",
+                "quantity": qty,
+                "unit_price_usd": price,
+                "total_value_usd": val,
+                "trade_type": deal.trade_type or "spot"
             })
 
     profile = await compute_portfolio_risk_profile(
@@ -118,11 +139,20 @@ async def generate_risk_report(
     result = await db.execute(stmt)
     positions = result.scalars().all()
 
+    deals_stmt = select(ManualDeal).where(ManualDeal.wallet_address == addr_lower)
+    deals_res = await db.execute(deals_stmt)
+    manual_deals = deals_res.scalars().all()
+
     pos_data = []
     total_val = 0.0
-    if not positions:
-        pos_data = await indexer_service.fetch_onchain_holdings(addr_lower)
-        total_val = sum([p["total_value_usd"] for p in pos_data])
+    if not positions and not manual_deals:
+        try:
+            pos_data = await indexer_service.fetch_onchain_holdings(addr_lower)
+            total_val = sum([p["total_value_usd"] for p in pos_data])
+        except Exception as e:
+            logger.warning(f"Failed to fetch onchain holdings in risk/report: {e}")
+            pos_data = []
+            total_val = 0.0
     else:
         for p in positions:
             asset_stmt = select(Asset).where(Asset.id == p.asset_id)
@@ -138,6 +168,21 @@ async def generate_risk_report(
                 "unit_price_usd": float(p.unit_price_usd),
                 "total_value_usd": val,
                 "trade_type": "spot"
+            })
+
+        for deal in manual_deals:
+            price, _, _ = await oracle_service.get_price(deal.asset_name)
+            qty = float(deal.quantity) if deal.side == "buy" else -float(deal.quantity)
+            val = abs(qty) * price
+            total_val += val
+
+            pos_data.append({
+                "symbol": deal.asset_name.upper(),
+                "asset_class": deal.asset_class or "crypto",
+                "quantity": qty,
+                "unit_price_usd": price,
+                "total_value_usd": val,
+                "trade_type": deal.trade_type or "spot"
             })
 
     # Portfolio Greeks & Volatility

@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { TrendingUp, Layers, ChevronRight, Activity } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { TrendingUp, Layers, ChevronRight, Activity, Percent, BarChart3 } from "lucide-react";
 
 export interface PositionItem {
   id: string;
@@ -24,6 +24,37 @@ interface Props {
 }
 
 export function HoldingsTable({ positions, onSelectPosition, selectedAssetId, onHedgePosition }: Props) {
+  const [riskMetrics, setRiskMetrics] = useState<Record<string, { beta: number; sharpe: number; treynor: number }>>({});
+
+  useEffect(() => {
+    // Asynchronously resolve single-position risk metrics for priced assets
+    const uniqueSymbols = Array.from(new Set(positions.map((p) => p.symbol.toUpperCase()))).filter(
+      (sym) => !riskMetrics[sym]
+    );
+
+    if (uniqueSymbols.length === 0) return;
+
+    uniqueSymbols.forEach((sym) => {
+      fetch("http://localhost:8000/api/v1/risk/single", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ asset_id: sym, lookback_days: 90 }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setRiskMetrics((prev) => ({
+            ...prev,
+            [sym]: {
+              beta: data.beta,
+              sharpe: data.sharpe_ratio,
+              treynor: data.treynor_ratio,
+            },
+          }));
+        })
+        .catch(() => {});
+    });
+  }, [positions]);
+
   const getChainName = (chainId?: number | null) => {
     switch (chainId) {
       case 1: return "Ethereum";
@@ -72,13 +103,16 @@ export function HoldingsTable({ positions, onSelectPosition, selectedAssetId, on
               <th style={{ padding: "12px 16px", textAlign: "right" }}>Quantity</th>
               <th style={{ padding: "12px 16px", textAlign: "right" }}>Price (USD)</th>
               <th style={{ padding: "12px 16px", textAlign: "right" }}>Total Value</th>
-              <th style={{ padding: "12px 16px", textAlign: "center" }}>Risk Analytics</th>
+              <th style={{ padding: "12px 16px", textAlign: "right" }}>Beta (vs BTC)</th>
+              <th style={{ padding: "12px 16px", textAlign: "right" }}>Sharpe (Rf=0)</th>
+              <th style={{ padding: "12px 16px", textAlign: "right" }}>Treynor</th>
+              <th style={{ padding: "12px 16px", textAlign: "center" }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {positions.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={10} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
                   No active holdings discovered. Click "Sync" or add a manual deal.
                 </td>
               </tr>
@@ -156,6 +190,55 @@ export function HoldingsTable({ positions, onSelectPosition, selectedAssetId, on
                         `$${pos.total_value_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                       ) : (
                         <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>$0.00</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "14px 16px", textAlign: "right" }} className="mono-num">
+                      {pos.unit_price_usd > 0 ? (
+                        riskMetrics[pos.symbol.toUpperCase()] ? (
+                          <span style={{
+                            color: riskMetrics[pos.symbol.toUpperCase()].beta > 1.2
+                              ? "var(--status-warning)"
+                              : riskMetrics[pos.symbol.toUpperCase()].beta < 0.5
+                              ? "var(--status-positive)"
+                              : "var(--text-primary)"
+                          }}>
+                            {riskMetrics[pos.symbol.toUpperCase()].beta.toFixed(2)}x
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>calc...</span>
+                        )
+                      ) : (
+                        <span style={{ color: "var(--text-muted)" }}>-</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "14px 16px", textAlign: "right" }} className="mono-num">
+                      {pos.unit_price_usd > 0 ? (
+                        riskMetrics[pos.symbol.toUpperCase()] ? (
+                          <span style={{
+                            color: riskMetrics[pos.symbol.toUpperCase()].sharpe >= 1.0
+                              ? "var(--status-positive)"
+                              : "var(--text-primary)"
+                          }}>
+                            {riskMetrics[pos.symbol.toUpperCase()].sharpe.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>calc...</span>
+                        )
+                      ) : (
+                        <span style={{ color: "var(--text-muted)" }}>-</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "14px 16px", textAlign: "right" }} className="mono-num">
+                      {pos.unit_price_usd > 0 ? (
+                        riskMetrics[pos.symbol.toUpperCase()] ? (
+                          <span>
+                            {riskMetrics[pos.symbol.toUpperCase()].treynor.toFixed(2)}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>calc...</span>
+                        )
+                      ) : (
+                        <span style={{ color: "var(--text-muted)" }}>-</span>
                       )}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "center" }}>

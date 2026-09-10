@@ -26,6 +26,7 @@ interface Props {
 export function BlotterTable({ deals, onDeleteDeal, walletAddress }: Props) {
   const [filterClass, setFilterClass] = useState<string>("all");
   const [rwaVerifications, setRwaVerifications] = useState<Record<string, any>>({});
+  const [riskMetrics, setRiskMetrics] = useState<Record<string, { beta: number; sharpe: number; treynor: number }>>({});
 
   useEffect(() => {
     // Check RWA verification for unique RWA assets
@@ -36,6 +37,32 @@ export function BlotterTable({ deals, onDeleteDeal, walletAddress }: Props) {
         if (res.ok) {
           const data = await res.json();
           setRwaVerifications(prev => ({ ...prev, [symbol]: data }));
+        }
+      } catch {}
+    });
+
+    // Resolve single risk metrics for all unique deal assets
+    const uniqueAssets = Array.from(new Set(deals.map(d => d.asset_name.toUpperCase()))).filter(
+      sym => !riskMetrics[sym]
+    );
+
+    uniqueAssets.forEach(async (sym) => {
+      try {
+        const res = await fetch("http://localhost:8000/api/v1/risk/single", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ asset_id: sym, lookback_days: 90 }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setRiskMetrics(prev => ({
+            ...prev,
+            [sym]: {
+              beta: data.beta,
+              sharpe: data.sharpe_ratio,
+              treynor: data.treynor_ratio,
+            },
+          }));
         }
       } catch {}
     });
@@ -85,6 +112,9 @@ export function BlotterTable({ deals, onDeleteDeal, walletAddress }: Props) {
               <th style={{ padding: "12px 14px" }}>Venue</th>
               <th style={{ padding: "12px 14px", textAlign: "right" }}>Quantity</th>
               <th style={{ padding: "12px 14px", textAlign: "right" }}>Cost Basis</th>
+              <th style={{ padding: "12px 14px", textAlign: "right" }}>Beta (vs BTC)</th>
+              <th style={{ padding: "12px 14px", textAlign: "right" }}>Sharpe (Rf=0)</th>
+              <th style={{ padding: "12px 14px", textAlign: "right" }}>Treynor</th>
               <th style={{ padding: "12px 14px" }}>Settlement</th>
               <th style={{ padding: "12px 14px", textAlign: "center" }}>PoR Status</th>
               <th style={{ padding: "12px 14px", textAlign: "center" }}>Action</th>
@@ -93,7 +123,7 @@ export function BlotterTable({ deals, onDeleteDeal, walletAddress }: Props) {
           <tbody>
             {filteredDeals.length === 0 ? (
               <tr>
-                <td colSpan={11} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+                <td colSpan={14} style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
                   No manual deals match the selected criteria.
                 </td>
               </tr>
@@ -129,6 +159,43 @@ export function BlotterTable({ deals, onDeleteDeal, walletAddress }: Props) {
                     </td>
                     <td style={{ padding: "12px 14px", textAlign: "right" }} className="mono-num">
                       ${deal.cost_basis_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: "12px 14px", textAlign: "right" }} className="mono-num">
+                      {riskMetrics[deal.asset_name.toUpperCase()] ? (
+                        <span style={{
+                          color: riskMetrics[deal.asset_name.toUpperCase()].beta > 1.2
+                            ? "var(--status-warning)"
+                            : riskMetrics[deal.asset_name.toUpperCase()].beta < 0.5
+                            ? "var(--status-positive)"
+                            : "var(--text-primary)"
+                        }}>
+                          {riskMetrics[deal.asset_name.toUpperCase()].beta.toFixed(2)}x
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>calc...</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "12px 14px", textAlign: "right" }} className="mono-num">
+                      {riskMetrics[deal.asset_name.toUpperCase()] ? (
+                        <span style={{
+                          color: riskMetrics[deal.asset_name.toUpperCase()].sharpe >= 1.0
+                            ? "var(--status-positive)"
+                            : "var(--text-primary)"
+                        }}>
+                          {riskMetrics[deal.asset_name.toUpperCase()].sharpe.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>calc...</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "12px 14px", textAlign: "right" }} className="mono-num">
+                      {riskMetrics[deal.asset_name.toUpperCase()] ? (
+                        <span>
+                          {riskMetrics[deal.asset_name.toUpperCase()].treynor.toFixed(2)}
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>calc...</span>
+                      )}
                     </td>
                     <td style={{ padding: "12px 14px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
                       {deal.settlement_date || "N/A (Spot)"}
