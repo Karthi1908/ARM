@@ -83,28 +83,37 @@ export function NetGreeksCards({ walletAddress }: Props) {
   ];
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "20px" }}>
-      {cards.map((c, i) => {
-        const Icon = c.icon;
-        return (
-          <div key={i} className="glass-card" style={{ padding: "20px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-              <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 500 }}>{c.label}</span>
-              <div style={{ padding: "6px", borderRadius: "8px", background: "var(--bg-glass)" }}>
-                <Icon size={16} color={c.color} />
+    <div style={{ marginBottom: "20px" }}>
+      {data?.math_engine_version && (
+        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "6px" }}>
+          <span className="badge badge-neutral" style={{ fontSize: "0.68rem", display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--text-muted)" }}>
+            ⚡ Deterministic Risk Engine: {data.math_engine_version}
+          </span>
+        </div>
+      )}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+        {cards.map((c, i) => {
+          const Icon = c.icon;
+          return (
+            <div key={i} className="glass-card" style={{ padding: "20px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 500 }}>{c.label}</span>
+                <div style={{ padding: "6px", borderRadius: "8px", background: "var(--bg-glass)" }}>
+                  <Icon size={16} color={c.color} />
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: "1.8rem", fontWeight: 800, color: c.color }} className="mono-num">
+                  {c.value}
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
+                  {c.subtext}
+                </div>
               </div>
             </div>
-            <div>
-              <div style={{ fontSize: "1.8rem", fontWeight: 800, color: c.color }} className="mono-num">
-                {c.value}
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                {c.subtext}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

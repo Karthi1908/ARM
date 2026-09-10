@@ -1,6 +1,10 @@
 import json
 import logging
-import redis.asyncio as redis
+try:
+    import redis.asyncio as redis
+except ImportError:
+    redis = None
+
 from typing import Optional, Any
 from backend.src.core.config import settings
 
@@ -8,11 +12,16 @@ logger = logging.getLogger(__name__)
 
 class RedisManager:
     def __init__(self):
-        self.client: Optional[redis.Redis] = None
+        self.client: Optional[Any] = None
         self._memory_cache: dict[str, tuple[str, float]] = {}  # key -> (value_json, expire_timestamp)
         self._is_redis_available = False
 
     async def connect(self):
+        if redis is None:
+            self._is_redis_available = False
+            logger.info("redis package not installed, using in-memory cache.")
+            return
+
         try:
             self.client = redis.from_url(settings.REDIS_URL, decode_responses=True)
             await self.client.ping()

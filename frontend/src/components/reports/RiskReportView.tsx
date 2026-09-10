@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ShieldAlert, AlertTriangle, ArrowRight, ArrowDownRight, Compass, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, AlertTriangle, ArrowRight, ArrowDownRight, Compass, CheckCircle2, Cpu } from "lucide-react";
 
 interface RebalanceActionItem {
   action_type: "trim" | "accumulate" | "hedge";
@@ -19,6 +19,7 @@ interface RiskReportData {
   es_95_usd: number;
   es_99_usd: number;
   rebalancing_suggestions: RebalanceActionItem[];
+  math_engine_version?: string;
 }
 
 interface Props {
@@ -29,6 +30,18 @@ interface Props {
 export function RiskReportView({ report, onSelectRebalanceAction }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      {/* Report Meta & Math Engine Version Tag */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+          Report ID: <span className="mono-num">{report.report_id?.slice(0, 8)}...</span>
+        </div>
+        {report.math_engine_version && (
+          <span className="badge badge-neutral" style={{ fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Cpu size={12} color="var(--accent-secondary)" /> Math Engine {report.math_engine_version}
+          </span>
+        )}
+      </div>
+
       {/* Executive Tail Risk Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
         <div className="glass-card" style={{ padding: "20px", borderLeft: "4px solid var(--status-negative)" }}>

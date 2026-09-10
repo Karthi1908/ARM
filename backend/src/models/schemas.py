@@ -82,6 +82,7 @@ class SingleRiskResponse(BaseModel):
     sharpe_ratio: float
     treynor_ratio: float
     historical_points_used: int
+    math_engine_version: str = "v1.1.0"
 
 class PortfolioRiskRequest(BaseModel):
     wallet_address: str
@@ -97,6 +98,7 @@ class PortfolioRiskResponse(BaseModel):
     assets: List[str]
     covariance_matrix: List[List[float]]
     correlation_matrix: List[List[float]]
+    math_engine_version: str = "v1.1.0"
 
 class RebalanceAction(BaseModel):
     action_type: str  # "trim", "accumulate", "hedge"
@@ -117,6 +119,8 @@ class RiskReportResponse(BaseModel):
     es_95_usd: float
     es_99_usd: float
     rebalancing_suggestions: List[RebalanceAction]
+    math_engine_version: str = "v1.1.0"
+
 
 
 # --- Rebalance Quote Schemas ---

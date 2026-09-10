@@ -69,3 +69,38 @@ def test_tail_risk_monotonicity():
     assert tail["var_99_usd"] > tail["var_95_usd"]
     assert tail["es_95_usd"] >= tail["var_95_usd"]
     assert tail["es_99_usd"] >= tail["var_99_usd"]
+
+def test_math_engine_version_tagging():
+    from backend.src.core.config import settings
+    from backend.src.models.schemas import SingleRiskResponse, PortfolioRiskResponse, RiskReportResponse
+    from datetime import datetime
+
+    assert settings.MATH_ENGINE_VERSION == "v1.1.0"
+    
+    single = SingleRiskResponse(
+        asset_id="ETH",
+        beta=1.1,
+        delta=1.0,
+        volatility_annualized=0.65,
+        standard_deviation=0.03,
+        sharpe_ratio=1.5,
+        treynor_ratio=1.2,
+        historical_points_used=90,
+        math_engine_version=settings.MATH_ENGINE_VERSION
+    )
+    assert single.math_engine_version == "v1.1.0"
+
+    port = PortfolioRiskResponse(
+        wallet_address="0x123",
+        net_delta=10.0,
+        net_gamma=0.0,
+        net_vega=0.0,
+        sharpe_ratio=1.4,
+        treynor_ratio=1.1,
+        assets=["ETH"],
+        covariance_matrix=[[0.05]],
+        correlation_matrix=[[1.0]],
+        math_engine_version=settings.MATH_ENGINE_VERSION
+    )
+    assert port.math_engine_version == "v1.1.0"
+

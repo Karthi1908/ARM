@@ -87,6 +87,7 @@ class RiskReport(Base):
     sharpe_ratio = Column(Numeric(8, 4), nullable=False)
     treynor_ratio = Column(Numeric(8, 4), nullable=False)
     matrix_snapshot = Column(JSON, nullable=False)
+    math_engine_version = Column(String(32), nullable=True, default="v1.1.0")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

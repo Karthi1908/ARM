@@ -135,6 +135,7 @@ paths:
                   standard_deviation: { type: number }
                   sharpe_ratio: { type: number, description: "Sharpe ratio with Rf=0" }
                   treynor_ratio: { type: number, description: "Treynor ratio with Rf=0" }
+                  math_engine_version: { type: string, example: "v1.1.0", description: "Deterministic math engine version per Constitution III" }
 
   /api/v1/risk/portfolio:
     post:
@@ -167,6 +168,12 @@ paths:
                     items:
                       type: array
                       items: { type: number }
+                  correlation_matrix:
+                    type: array
+                    items:
+                      type: array
+                      items: { type: number }
+                  math_engine_version: { type: string, example: "v1.1.0", description: "Deterministic math engine version per Constitution III" }
 
   /api/v1/risk/report:
     post:
@@ -198,6 +205,7 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/RebalanceAction'
+                  math_engine_version: { type: string, example: "v1.1.0", description: "Deterministic math engine version per Constitution III" }
 
   /api/v1/rebalance/quote:
     post:

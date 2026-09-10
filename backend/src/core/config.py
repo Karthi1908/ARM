@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     RISK_FREE_RATE: float = 0.00
     DEFAULT_LOOKBACK_DAYS: int = 90
     MIN_OBSERVATIONS_THRESHOLD: int = 20
+    MATH_ENGINE_VERSION: str = "v1.1.0"
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")
 

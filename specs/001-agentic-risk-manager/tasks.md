@@ -251,4 +251,13 @@
 - [X] T071 [US2] Add inline columns and async risk resolution for manual deals in `frontend/src/components/blotter/BlotterTable.tsx`
 - [X] T072 [US4] Aggregate `ManualDeal` records alongside `Position` records and add error resilience in `backend/src/api/risk.py`
 
+---
+
+## Phase 13: Convergence
+
+- [X] T073 [CRITICAL] Add deterministic math engine version tagging (`math_engine_version`) to single deal, portfolio, and tail-risk responses per Constitution III
+- [X] T074 Add isolated mock fixtures and bounded network timeouts to multi-chain indexer integration tests in `backend/tests/integration/test_portfolio_sync.py` per Constitution Quality Gate 2
+- [X] T075 Re-synthesize consolidated system architecture into `specs/001-agentic-risk-manager/plan.md` per plan: architecture documentation
+
+
 

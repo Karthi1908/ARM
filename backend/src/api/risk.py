@@ -61,7 +61,8 @@ async def get_single_risk_metrics(payload: SingleRiskRequest):
         standard_deviation=daily_std,
         sharpe_ratio=sharpe,
         treynor_ratio=treynor,
-        historical_points_used=len(asset_returns)
+        historical_points_used=len(asset_returns),
+        math_engine_version=settings.MATH_ENGINE_VERSION
     )
 
 @router.post("/portfolio", response_model=PortfolioRiskResponse)
@@ -129,7 +130,8 @@ async def get_portfolio_risk_metrics(
         treynor_ratio=profile["treynor_ratio"],
         assets=profile["assets"],
         covariance_matrix=profile["covariance_matrix"],
-        correlation_matrix=profile["correlation_matrix"]
+        correlation_matrix=profile["correlation_matrix"],
+        math_engine_version=settings.MATH_ENGINE_VERSION
     )
 
 @router.post("/report", response_model=RiskReportResponse)
@@ -227,7 +229,8 @@ async def generate_risk_report(
         es_99_usd=tail_risk["es_99_usd"],
         sharpe_ratio=profile["sharpe_ratio"],
         treynor_ratio=profile["treynor_ratio"],
-        matrix_snapshot={"assets": profile["assets"], "covariance": profile["covariance_matrix"]}
+        matrix_snapshot={"assets": profile["assets"], "covariance": profile["covariance_matrix"]},
+        math_engine_version=settings.MATH_ENGINE_VERSION
     )
     db.add(report_entity)
     await db.commit()
@@ -248,5 +251,6 @@ async def generate_risk_report(
                 recommended_venue=s["recommended_venue"]
             )
             for s in rebalance_suggestions
-        ]
+        ],
+        math_engine_version=settings.MATH_ENGINE_VERSION
     )
