@@ -19,8 +19,13 @@ def is_port_reachable(host: str, port: int, timeout: float = 0.3) -> bool:
 
 # Determine database URL with automatic SQLite fallback if PostgreSQL is unreachable
 raw_url = settings.DATABASE_URL
-if raw_url.startswith("postgresql://"):
+if raw_url.startswith("postgres://"):
+    raw_url = raw_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif raw_url.startswith("postgresql://"):
     raw_url = raw_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+if "sslmode=require" in raw_url:
+    raw_url = raw_url.replace("sslmode=require", "ssl=require")
 
 active_db_url = raw_url
 if "postgresql" in raw_url:
