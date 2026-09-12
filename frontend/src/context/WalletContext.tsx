@@ -51,7 +51,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   // Resolve ENS and sync session when activeAddress changes
   useEffect(() => {
     if (activeAddress) {
-      fetch("http://localhost:8000/api/v1/auth/session", {
+      fetch("/api/v1/auth/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address: activeAddress, auth_provider: authenticated ? "privy" : "explorer" }),
@@ -86,7 +86,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (!activeAddress) return;
     setIsSyncing(true);
     try {
-      await fetch(`http://localhost:8000/api/v1/portfolio/${activeAddress}/sync`, {
+      await fetch(`/api/v1/portfolio/${activeAddress}/sync`, {
         method: "POST",
       });
       window.dispatchEvent(new Event("portfolio-updated"));

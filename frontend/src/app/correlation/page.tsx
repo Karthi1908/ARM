@@ -20,7 +20,7 @@ export default function CorrelationPage() {
       return;
     }
     setLoading(true);
-    fetch("http://localhost:8000/api/v1/risk/portfolio", {
+    fetch("/api/v1/risk/portfolio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet_address: activeAddress, lookback_days: 90 }),

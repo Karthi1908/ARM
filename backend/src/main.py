@@ -15,6 +15,8 @@ logger = logging.getLogger("crypto_risk_manager")
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up Crypto Risk Manager API...")
+    from backend.src.core.config import validate_and_log_config
+    validate_and_log_config(logger)
     await init_db()
     await redis_manager.connect()
     yield
@@ -48,12 +50,26 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/health", tags=["Health"])
 async def health_check():
+    import os
+    from backend.src.core.database import get_db_status
+    db_info = get_db_status()
+    cache_status = "available" if redis_manager.is_connected else "in-memory"
     return {
-        "status": "healthy",
+        "status": "ok",
         "service": settings.PROJECT_NAME,
         "version": settings.VERSION,
+        "environment": os.getenv("ENVIRONMENT", "production"),
         "reference_benchmark": settings.REFERENCE_BENCHMARK,
-        "risk_free_rate": settings.RISK_FREE_RATE
+        "risk_free_rate": settings.RISK_FREE_RATE,
+        "database": db_info,
+        "cache": {
+            "status": cache_status,
+            "engine": "redis" if redis_manager.is_connected else "in-memory"
+        },
+        "dependencies": {
+            "the_graph": "configured" if bool(settings.THE_GRAPH_API_KEY) else "mock/fallback",
+            "coingecko": "configured" if bool(settings.COINGECKO_API_KEY) else "public-tier"
+        }
     }
 
 # Dynamic router inclusion with graceful fallbacks

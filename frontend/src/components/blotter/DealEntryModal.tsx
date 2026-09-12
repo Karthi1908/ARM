@@ -47,7 +47,7 @@ export function DealEntryModal({ isOpen, onClose, onDealCreated, onSuccess, wall
 
     setSubmitting(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/blotter/${walletAddress}/deals`, {
+      const res = await fetch(`/api/v1/blotter/${walletAddress}/deals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

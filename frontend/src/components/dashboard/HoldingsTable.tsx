@@ -35,7 +35,7 @@ export function HoldingsTable({ positions, onSelectPosition, selectedAssetId, on
     if (uniqueSymbols.length === 0) return;
 
     uniqueSymbols.forEach((sym) => {
-      fetch("http://localhost:8000/api/v1/risk/single", {
+      fetch("/api/v1/risk/single", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ asset_id: sym, lookback_days: 90 }),

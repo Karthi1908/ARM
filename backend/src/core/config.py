@@ -10,7 +10,13 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    BACKEND_CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://agentic-risk-frontend-718889497518.us-central1.run.app",
+        "https://agentic-risk-frontend-n7lmyqxwca-uc.a.run.app",
+        "*"
+    ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
@@ -53,3 +59,19 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")
 
 settings = Settings()
+
+def validate_and_log_config(logger=None):
+    """Logs runtime configuration status safely without leaking secrets."""
+    import logging
+    log = logger or logging.getLogger("crypto_risk_manager.config")
+    
+    privy_status = "configured" if settings.PRIVY_APP_ID and settings.PRIVY_APP_ID != "mock-privy-app-id" else "mock"
+    graph_status = "configured" if bool(settings.THE_GRAPH_API_KEY) else "mock/fallback"
+    coingecko_status = "configured" if bool(settings.COINGECKO_API_KEY) else "public-tier"
+    db_type = "postgresql" if "postgresql" in settings.DATABASE_URL else "sqlite"
+    redis_status = "configured" if bool(settings.REDIS_URL) else "in-memory-fallback"
+    
+    log.info(
+        f"Config status: Auth={privy_status}, DB={db_type}, "
+        f"MarketFeeds={coingecko_status}, Indexer={graph_status}, Cache={redis_status}"
+    )

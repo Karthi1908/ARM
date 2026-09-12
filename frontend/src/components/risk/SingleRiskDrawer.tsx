@@ -16,7 +16,7 @@ export function SingleRiskDrawer({ assetId, assetName, onClose }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetch("http://localhost:8000/api/v1/risk/single", {
+    fetch("/api/v1/risk/single", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ asset_id: assetId, lookback_days: lookbackDays }),

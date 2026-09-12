@@ -1,0 +1,26 @@
+# Production Dockerfile for Agentic Risk Manager Backend
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8080
+
+# Install minimal build dependencies for packages that compile C-extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install python dependencies
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Copy source code and database baseline
+COPY backend ./backend
+
+EXPOSE 8080
+
+# Cloud Run injects $PORT environment variable
+CMD uvicorn backend.src.main:app --host 0.0.0.0 --port ${PORT:-8080}

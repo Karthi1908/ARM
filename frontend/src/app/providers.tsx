@@ -9,7 +9,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const envAppId = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
   const privyAppId = (envAppId && envAppId.length === 25)
     ? envAppId
-    : "clrw6z0mockprivyappid1234";
+    : "cmtrc963302500cla3okrcv47";
 
   return (
     <PrivyProvider

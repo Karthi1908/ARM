@@ -199,6 +199,43 @@ flowchart TD
 
 ---
 
+## ☁️ Google Cloud Deployment (Zero Docker)
+
+Deploy the entire full-stack application (FastAPI backend + Next.js frontend) to Google Cloud Platform using serverless Cloud Run with **Google Cloud Buildpacks**—requiring **zero local Docker installation, daemon, or container commands**.
+
+### Prerequisites
+1. Install the [Google Cloud CLI (`gcloud`)](https://cloud.google.com/sdk/docs/install).
+2. Authenticate and configure your target project:
+   ```bash
+   gcloud auth login
+   gcloud config set project YOUR_PROJECT_ID
+   ```
+3. Prepare configuration:
+   ```bash
+   cp .env.gcp.example .env.gcp
+   ```
+
+### One-Command Deployment
+
+#### Windows PowerShell:
+```powershell
+.\deploy-gcp.ps1 -Region us-central1
+```
+
+#### Linux / macOS / Cloud Shell:
+```bash
+chmod +x deploy-gcp.sh
+./deploy-gcp.sh --region us-central1
+```
+
+### What Happens Behind the Scenes
+1. **Source-Based Buildpacks**: The deployment scripts upload `backend/` and `frontend/` source directories to Google Cloud Build. Remote buildpacks detect Python and Node.js runtimes automatically.
+2. **Dynamic Entrypoint Binding**: Backend uses `backend/Procfile` to bind Uvicorn to Cloud Run's `$PORT`. Frontend starts Next.js with dynamic `$PORT` listening.
+3. **Automated Inter-Service Wiring**: The backend URL is retrieved and injected as `NEXT_PUBLIC_API_URL` into the frontend service during deployment.
+4. **Health Verification**: Queries `GET /health` on the deployed API to confirm operational readiness and database connectivity.
+
+---
+
 ## 📖 Development & Spec Kit Workflow
 
 This project is governed by **Spec Kit**:

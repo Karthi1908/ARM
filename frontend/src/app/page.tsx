@@ -32,7 +32,7 @@ export default function DashboardPage() {
       return;
     }
     setLoading(true);
-    fetch(`http://localhost:8000/api/v1/portfolio/${activeAddress}`)
+    fetch(`/api/v1/portfolio/${activeAddress}`)
       .then((res) => res.json())
       .then((data) => {
         setPortfolio({

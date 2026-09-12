@@ -16,6 +16,10 @@ class RedisManager:
         self._memory_cache: dict[str, tuple[str, float]] = {}  # key -> (value_json, expire_timestamp)
         self._is_redis_available = False
 
+    @property
+    def is_connected(self) -> bool:
+        return self._is_redis_available and self.client is not None
+
     async def connect(self):
         if redis is None:
             self._is_redis_available = False

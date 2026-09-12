@@ -36,7 +36,7 @@ export function RebalanceModal({ isOpen, onClose, action, walletAddress }: Props
       const toToken = action.to_token || (action.action_type === "trim" ? "USDC" : action.asset_id) || "USDC";
       const amountStr = action.amount || (action.target_delta_usd ? Math.abs(action.target_delta_usd / 3550).toFixed(4) : "1.0");
 
-      fetch("http://localhost:8000/api/v1/rebalance/quote", {
+      fetch("/api/v1/rebalance/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

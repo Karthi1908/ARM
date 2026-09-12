@@ -21,7 +21,7 @@ export default function BlotterPage() {
       return;
     }
     setLoading(true);
-    fetch(`http://localhost:8000/api/v1/blotter/${activeAddress}/deals`)
+    fetch(`/api/v1/blotter/${activeAddress}/deals`)
       .then((res) => res.json())
       .then((data) => {
         setDeals(Array.isArray(data) ? data : []);
@@ -40,7 +40,7 @@ export default function BlotterPage() {
   const handleDelete = async (dealId: string) => {
     if (!activeAddress) return;
     try {
-      await fetch(`http://localhost:8000/api/v1/blotter/${activeAddress}/deals/${dealId}`, {
+      await fetch(`/api/v1/blotter/${activeAddress}/deals/${dealId}`, {
         method: "DELETE",
       });
       fetchDeals();

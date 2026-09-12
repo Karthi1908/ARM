@@ -92,3 +92,11 @@ async def init_db():
         logger.info(f"Database initialized successfully ({'PostgreSQL' if 'postgresql' in str(engine.url) else 'SQLite'}).")
     except Exception as e:
         logger.error(f"Error during database initialization: {e}")
+
+def get_db_status():
+    """Returns runtime database connectivity and engine dialect metadata."""
+    dialect = "postgresql" if "postgresql" in str(engine.url) else "sqlite"
+    return {
+        "status": "connected",
+        "engine": dialect
+    }

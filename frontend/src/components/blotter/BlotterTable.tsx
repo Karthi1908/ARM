@@ -33,7 +33,7 @@ export function BlotterTable({ deals, onDeleteDeal, walletAddress }: Props) {
     const rwaAssets = Array.from(new Set(deals.filter(d => d.asset_class === "rwa").map(d => d.asset_name)));
     rwaAssets.forEach(async (symbol) => {
       try {
-        const res = await fetch(`http://localhost:8000/api/v1/blotter/rwa-verification/${symbol}`);
+        const res = await fetch(`/api/v1/blotter/rwa-verification/${symbol}`);
         if (res.ok) {
           const data = await res.json();
           setRwaVerifications(prev => ({ ...prev, [symbol]: data }));
@@ -48,7 +48,7 @@ export function BlotterTable({ deals, onDeleteDeal, walletAddress }: Props) {
 
     uniqueAssets.forEach(async (sym) => {
       try {
-        const res = await fetch("http://localhost:8000/api/v1/risk/single", {
+        const res = await fetch("/api/v1/risk/single", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ asset_id: sym, lookback_days: 90 }),
